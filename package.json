@@ -1,0 +1,11 @@
+{
+  "name": "booty",
+  "version": "1.0.0",
+  "description": "Multiplayer HTML pirate game",
+  "main": "server.js",
+  "scripts": {
+    "start": "node ../ige/server/ige.js -g ."
+  },
+  "author": "Brian Picciano",
+  "license": "ISC"
+}
