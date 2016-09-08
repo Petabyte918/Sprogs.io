@@ -19,10 +19,11 @@ var Player = IgeEntity.extend({
 			this.addComponent(IgeVelocityComponent);
 
             this.properties = {
-                thrustVelocity: 0,
-                maxThrustVelocity: 0.20,
-                rotateVelocity: 0.045,
-                acceleration: 0.020
+                thrustVelocity: 0,          // current velocity
+                maxThrustVelocity: 0.2,     // max velocity
+                rotateVelocity: 3,          // divisor to calc rotation velocity
+                acceleration: 0.02,         // percent of maxThrust to increase by per tick
+                friction: 0.02              // percent of thrust to decrease by per tick
             };
 		}
 
@@ -75,26 +76,25 @@ var Player = IgeEntity.extend({
 		/* CEXCLUDE */
 		if (ige.isServer) {
 
+            var rotateVelocity = this.properties.thrustVelocity / this.properties.rotateVelocity;
+
 			if (this.controls.left) {
-				this.rotateBy(0, 0, Math.radians(-this.properties.rotateVelocity * ige._tickDelta));
+				this.rotateBy(0, 0, Math.radians(-rotateVelocity * ige._tickDelta));
             }
 
 			if (this.controls.right) {
-				this.rotateBy(0, 0, Math.radians(this.properties.rotateVelocity * ige._tickDelta));
+				this.rotateBy(0, 0, Math.radians(rotateVelocity * ige._tickDelta));
             }
 
 			if (this.controls.thrust) {
                 if (this.properties.thrustVelocity < this.properties.maxThrustVelocity) {
                     this.properties.thrustVelocity += this.properties.maxThrustVelocity * this.properties.acceleration;
                 }
-				this.velocity.byAngleAndPower(this._rotate.z + Math.radians(-90), this.properties.thrustVelocity);
-			} else {
-                this.properties.thrustVelocity = 0;
             }
 
-            // Always apply friction
-            this.velocity.friction(0.05);
-            this.velocity._applyFriction();
+            this.velocity.byAngleAndPower(this._rotate.z + Math.radians(-90), this.properties.thrustVelocity);
+
+            this.properties.thrustVelocity *= 1 - this.properties.friction;
 		}
 		/* CEXCLUDE */
 
