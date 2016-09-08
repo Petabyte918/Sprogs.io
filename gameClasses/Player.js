@@ -21,9 +21,9 @@ var Player = IgeEntity.extend({
             this.properties = {
                 thrustVelocity: 0,          // current velocity
                 maxThrustVelocity: 0.2,     // max velocity
-                rotateVelocity: 3,          // divisor to calc rotation velocity
-                acceleration: 0.02,         // percent of maxThrust to increase by per tick
-                friction: 0.02              // percent of thrust to decrease by per tick
+                rotateVelocity: 3,          // divisor to calculate rotation velocity
+                acceleration: 0.01,         // percent of maxThrust to increase by every tick
+                friction: 0.025             // percent of thrust to decrease by every tick
             };
 		}
 
@@ -75,87 +75,102 @@ var Player = IgeEntity.extend({
 	tick: function (ctx) {
 		/* CEXCLUDE */
 		if (ige.isServer) {
-
-            var rotateVelocity = this.properties.thrustVelocity / this.properties.rotateVelocity;
-
-			if (this.controls.left) {
-				this.rotateBy(0, 0, Math.radians(-rotateVelocity * ige._tickDelta));
-            }
-
-			if (this.controls.right) {
-				this.rotateBy(0, 0, Math.radians(rotateVelocity * ige._tickDelta));
-            }
-
-			if (this.controls.thrust) {
-                if (this.properties.thrustVelocity < this.properties.maxThrustVelocity) {
-                    this.properties.thrustVelocity += this.properties.maxThrustVelocity * this.properties.acceleration;
-                }
-            }
-
-            this.velocity.byAngleAndPower(this._rotate.z + Math.radians(-90), this.properties.thrustVelocity);
-
-            this.properties.thrustVelocity *= 1 - this.properties.friction;
+			this.handleMovement();
 		}
 		/* CEXCLUDE */
 
 		if (ige.isClient) {
-			if (ige.input.actionState('left')) {
-				if (!this.controls.left) {
-					// Record the new state
-					this.controls.left = true;
-
-					// Tell the server about our control change
-					ige.network.send('playerControlLeftDown');
-				}
-			} else {
-				if (this.controls.left) {
-					// Record the new state
-					this.controls.left = false;
-
-					// Tell the server about our control change
-					ige.network.send('playerControlLeftUp');
-				}
-			}
-
-			if (ige.input.actionState('right')) {
-				if (!this.controls.right) {
-					// Record the new state
-					this.controls.right = true;
-
-					// Tell the server about our control change
-					ige.network.send('playerControlRightDown');
-				}
-			} else {
-				if (this.controls.right) {
-					// Record the new state
-					this.controls.right = false;
-
-					// Tell the server about our control change
-					ige.network.send('playerControlRightUp');
-				}
-			}
-
-			if (ige.input.actionState('thrust')) {
-				if (!this.controls.thrust) {
-					// Record the new state
-					this.controls.thrust = true;
-
-					// Tell the server about our control change
-					ige.network.send('playerControlThrustDown');
-				}
-			} else {
-				if (this.controls.thrust) {
-					// Record the new state
-					this.controls.thrust = false;
-
-					// Tell the server about our control change
-					ige.network.send('playerControlThrustUp');
-				}
-			}
+			this.handleInput();
 		}
 
 		// Call the IgeEntity (super-class) tick() method
 		IgeEntity.prototype.tick.call(this, ctx);
+	},
+
+	handleMovement: function () {
+		// Declare friction here so we can disable it when accelerating
+		var fric = this.properties.friction;
+
+		// Calculate rotateVelocity based on current thrustVelocity
+		var rotateVelocity = this.properties.thrustVelocity / this.properties.rotateVelocity;
+
+		if (this.controls.left) {
+			this.rotateBy(0, 0, Math.radians(-rotateVelocity * ige._tickDelta));
+		}
+
+		if (this.controls.right) {
+			this.rotateBy(0, 0, Math.radians(rotateVelocity * ige._tickDelta));
+		}
+
+		// Apply acceleration and disable friction
+		if (this.controls.thrust) {
+			if (this.properties.thrustVelocity < this.properties.maxThrustVelocity) {
+				this.properties.thrustVelocity += this.properties.maxThrustVelocity * this.properties.acceleration;
+				fric = 0;
+			}
+		}
+
+		// Always apply velocity in the direction the ship is pointing
+		this.velocity.byAngleAndPower(this._rotate.z + Math.radians(-90), this.properties.thrustVelocity);
+
+		// Apply friction to the current thrustVelocity
+		this.properties.thrustVelocity *= 1 - fric;
+	},
+
+	handleInput: function () {
+		if (ige.input.actionState('left')) {
+			if (!this.controls.left) {
+				// Record the new state
+				this.controls.left = true;
+
+				// Tell the server about our control change
+				ige.network.send('playerControlLeftDown');
+			}
+		} else {
+			if (this.controls.left) {
+				// Record the new state
+				this.controls.left = false;
+
+				// Tell the server about our control change
+				ige.network.send('playerControlLeftUp');
+			}
+		}
+
+		if (ige.input.actionState('right')) {
+			if (!this.controls.right) {
+				// Record the new state
+				this.controls.right = true;
+
+				// Tell the server about our control change
+				ige.network.send('playerControlRightDown');
+			}
+		} else {
+			if (this.controls.right) {
+				// Record the new state
+				this.controls.right = false;
+
+				// Tell the server about our control change
+				ige.network.send('playerControlRightUp');
+			}
+		}
+
+		if (ige.input.actionState('thrust')) {
+			if (!this.controls.thrust) {
+				// Record the new state
+				this.controls.thrust = true;
+
+				// Tell the server about our control change
+				ige.network.send('playerControlThrustDown');
+			}
+		} else {
+			if (this.controls.thrust) {
+				// Record the new state
+				this.controls.thrust = false;
+
+				// Tell the server about our control change
+				ige.network.send('playerControlThrustUp');
+			}
+		}
 	}
 });
 
