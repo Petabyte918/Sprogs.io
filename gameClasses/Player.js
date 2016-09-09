@@ -8,6 +8,9 @@ var Player = IgeEntityBox2d.extend({
 
 		this.drawBounds(false);
 
+		this._score = 0;
+		this._thrustVelocity = 0;
+
 		// Used to tell the server when we give input
 		this.controls = {
 			left: false,
@@ -37,10 +40,10 @@ var Player = IgeEntityBox2d.extend({
 
 				this.serverProperties = {
 					thrustVelocity: 0,          // current velocity
-					maxThrustVelocity: 8,     // max velocity
-					rotationDivisor: 3.3,          // divisor to calculate rotation velocity
+					maxThrustVelocity: 8,     	/// max velocity
+					rotationDivisor: 3.3,		// divisor to calculate rotation velocity
 					acceleration: 0.03,         // percent of maxThrust to increase by every tick
-					friction: 0.04             // percent of thrust to decrease by every tick
+					friction: 0.04              // percent of thrust to decrease by every tick
 				};
 			}
 
@@ -85,7 +88,7 @@ var Player = IgeEntityBox2d.extend({
 		}
 
 		// Define the data sections that will be included in the stream
-		this.streamSections(['transform', 'score']);
+		this.streamSections(['transform', 'score', 'thrustVelocity']);
 	},
 
 	/**
@@ -103,19 +106,34 @@ var Player = IgeEntityBox2d.extend({
 		if (sectionId === 'score') {
 			// Check if the server sent us data, if not we are supposed
 			// to return the data instead of set it
+			// TODO: find a better way to stream data. Constantly sends and sets _score and _thrustVelocity whenever either changes
 			if (data) {
 				// We have been given new data!
 				this._score = data;
+				return;
 			} else {
 				// Return current data
 				return this._score;
 			}
-		} else {
-			// The section was not one that we handle here, so pass this
-			// to the super-class streamSectionData() method - it handles
-			// the "transform" section by itself
-			return IgeEntity.prototype.streamSectionData.call(this, sectionId, data);
 		}
+
+		if (sectionId === 'thrustVelocity') {
+			// Check if the server sent us data, if not we are supposed
+			// to return the data instead of set it
+			if (data) {
+				// We have been given new data!
+				this._thrustVelocity = data;
+				return;
+			} else {
+				// Return current data
+				return this._thrustVelocity;
+			}
+		}
+
+		// The section was not one that we handle here, so pass this
+		// to the super-class streamSectionData() method - it handles
+		// the "transform" section by itself
+		return IgeEntity.prototype.streamSectionData.call(this, sectionId, data);
 	},
 
 	/**
@@ -175,7 +193,12 @@ var Player = IgeEntityBox2d.extend({
 		this._box2dBody.SetLinearVelocity(new IgePoint3d(this.serverProperties.thrustVelocity * xComponent, this.serverProperties.thrustVelocity * yComponent, 0));
 
 		// Apply friction to the current thrustVelocity
-		this.serverProperties.thrustVelocity *= 1 - fric;
+		this.serverProperties.thrustVelocity > 0.05
+			? this.serverProperties.thrustVelocity *= 1 - fric
+			: this.serverProperties.thrustVelocity = 0;
+
+		// Set _thrustVelocity which is streamed to the client
+		this._thrustVelocity = this.serverProperties.thrustVelocity;
 	},
 
 	handleInput: function () {
@@ -271,27 +294,14 @@ var Player = IgeEntityBox2d.extend({
 	},
 
 	handleEmitters: function () {
-		var clientVel = this.getClientVelocity();
-		if (clientVel > 1 && !this.switches.thrustEmitterStarted) {
+		if (this._thrustVelocity > 1 && !this.switches.thrustEmitterStarted) {
 			this.thrustEmitter.start();
 			this.switches.thrustEmitterStarted = true;
-			console.log("Start")
-		} else if (clientVel < 0.75 && this.switches.thrustEmitterStarted){
+		} else if (this._thrustVelocity < 0.75 && this.switches.thrustEmitterStarted){
 			this.thrustEmitter.stop();
 			this.switches.thrustEmitterStarted = false;
-			console.log("Stop")
 		}
 	},
-
-	// Returns the client's velocity in units/tick
-	getClientVelocity: function () {
-		var deltaX = this.worldPosition().x - this.clientProperties.prev_position.x;
-		var deltaY = this.worldPosition().y - this.clientProperties.prev_position.y;
-		var vel = Math.sqrt((deltaX * deltaX) + (deltaY * deltaY));
-
-		this.clientProperties.prev_position = this.worldPosition();
-		return vel
-	}
 });
 
 if (typeof(module) !== 'undefined' && typeof(module.exports) !== 'undefined') { module.exports = Player; }
