@@ -28,7 +28,7 @@ var Player = IgeEntityBox2d.extend({
 
 				this.box2dBody({
 					type: 'dynamic',
-					linearDamping: 3,
+					linearDamping: 0,
 					angularDamping: 7,
 					allowSleep: true,
 					fixedRotation: false,
@@ -36,8 +36,11 @@ var Player = IgeEntityBox2d.extend({
 				});
 
 				this.box2dProperties = {
-					thrustVelocity: 5,          // current velocity
-					rotateVelocity: 2           // divisor to calculate rotation velocity
+					thrustVelocity: 0,          // current velocity
+					maxThrustVelocity: 8,     // max velocity
+					rotationDivisor: 3,          // divisor to calculate rotation velocity
+					acceleration: 0.05,         // percent of maxThrust to increase by every tick
+					friction: 0.04             // percent of thrust to decrease by every tick
 				};
 			}
 
@@ -115,9 +118,13 @@ var Player = IgeEntityBox2d.extend({
 	},
 
 	handleBox2dMovement: function () {
-		var thrustVelocity = this.box2dProperties.thrustVelocity;
-		var rotateVelocity = this.box2dProperties.rotateVelocity;
+		// Declare friction here so we can disable it when accelerating
+		var fric = this.box2dProperties.friction;
 
+		// Calculate rotateVelocity based on current thrustVelocity
+		var rotateVelocity = this.box2dProperties.thrustVelocity / this.box2dProperties.rotationDivisor;
+
+		// Whenever we listen for input, awake the body
 		if (this.controls.left) {
 			this._box2dBody.SetAngularVelocity(-rotateVelocity);
 			this._box2dBody.SetAwake(true);
@@ -126,14 +133,26 @@ var Player = IgeEntityBox2d.extend({
 			this._box2dBody.SetAwake(true);
 		}
 
+		// Apply acceleration and disable friction
 		if (this.controls.thrust) {
-			var angle = this._rotate.z + Math.radians(-90);
-			var xComponent = Math.cos(angle);
-			var yComponent = Math.sin(angle);
+			if (this.box2dProperties.thrustVelocity < this.box2dProperties.maxThrustVelocity) {
+				this.box2dProperties.thrustVelocity += this.box2dProperties.maxThrustVelocity * this.box2dProperties.acceleration;
+				fric = 0;
+			}
 
-			this._box2dBody.SetLinearVelocity(new IgePoint3d(thrustVelocity * xComponent, thrustVelocity * yComponent, 0));
 			this._box2dBody.SetAwake(true);
 		}
+
+		// Calculate the angle in which the ship is pointing
+		var angle = this._rotate.z + Math.radians(-90);
+		var xComponent = Math.cos(angle);
+		var yComponent = Math.sin(angle);
+
+		// Always apply velocity in the direction of the ship
+		this._box2dBody.SetLinearVelocity(new IgePoint3d(this.box2dProperties.thrustVelocity * xComponent, this.box2dProperties.thrustVelocity * yComponent, 0));
+
+		// Apply friction to the current thrustVelocity
+		this.box2dProperties.thrustVelocity *= 1 - fric;
 	},
 
 	handleNonPhysicsMovement: function () {
