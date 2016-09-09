@@ -23,7 +23,7 @@ var Client = IgeClass.extend({
 		// Load the textures we want to use
 		this.textures = {
 			ship: new IgeTexture('./assets/Pirate_Ship_Top_Down_64x64.png'),
-            testmap: new IgeCellSheet('./assets/RPGpack_sheet.png', 20, 13),
+            testmap: new IgeCellSheet('./assets/RPGpack_sheet.png', 20, 13)
 		};
 
 		ige.on('texturesLoaded', function () {
@@ -47,7 +47,6 @@ var Client = IgeClass.extend({
 							// is created because of the incoming stream data
 							.stream.on('entityCreated', function (entity) {
 								self.log('Stream entity created with ID: ' + entity.id());
-
 							});
 
 						self.mainScene = new IgeScene2d()

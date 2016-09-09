@@ -1,8 +1,8 @@
-var Player = IgeEntity.extend({
+var Player = IgeEntityBox2d.extend({
 	classId: 'Player',
 
 	init: function () {
-		IgeEntity.prototype.init.call(this);
+		IgeEntityBox2d.prototype.init.call(this);
 
 		var self = this;
 
@@ -16,6 +16,20 @@ var Player = IgeEntity.extend({
 		};
 
 		if (ige.isServer) {
+			this.translateTo(320, 320, 0);
+
+			if(ige.box2d) {
+				var fixDefs = self.setUpCollider();
+
+				this.box2dBody({
+					type: 'dynamic',
+					angularDamping: 0.0,
+					allowSleep: true,
+					fixedRotation: false,
+					fixtures: fixDefs
+				});
+			}
+
 			this.addComponent(IgeVelocityComponent);
 
             this.properties = {
@@ -84,7 +98,7 @@ var Player = IgeEntity.extend({
 		}
 
 		// Call the IgeEntity (super-class) tick() method
-		IgeEntity.prototype.tick.call(this, ctx);
+		IgeEntityBox2d.prototype.tick.call(this, ctx);
 	},
 
 	handleMovement: function () {
@@ -171,6 +185,43 @@ var Player = IgeEntity.extend({
 				ige.network.send('playerControlThrustUp');
 			}
 		}
+	},
+
+	setUpCollider: function () {
+
+		// Points created in Physics Body Editor, set to the origin, rounded and copied over
+		var y_offset = 0.1;
+		var collisionPoly = new IgePoly2d()
+			// .addPoint(0, 0.6 - y_offset)
+			.addPoint(-0.05, 0.4 - y_offset)
+			.addPoint(-0.2, .075 - y_offset)
+			.addPoint(-0.2, -0.1 - y_offset)
+			.addPoint(-0.15, -0.325 - y_offset)
+			.addPoint(-0.075, -0.4 - y_offset)
+			.addPoint(0.075, -0.4 - y_offset)
+			.addPoint(0.15, -0.325 - y_offset)
+			.addPoint(0.2, -0.1 - y_offset)
+			.addPoint(0.2, 0.075 - y_offset)
+			.addPoint(0.05, 0.4 - y_offset);
+
+		// Scale it up to fit texture
+		collisionPoly.multiply(-4);
+
+		// Now convert this polygon into an array of triangles
+		var triangles = collisionPoly.triangulate();
+
+		// for every triangle in triangles, create a new fixture and append it to fixDefs
+		var fixDefs = [];
+		for (var i = 0; i < triangles.length; i++) {
+			fixDefs.push({
+				shape: {
+					type: 'polygon',
+					data: triangles[i]
+				}
+			});
+		}
+
+		return fixDefs;
 	}
 });
 

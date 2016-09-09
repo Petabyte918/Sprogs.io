@@ -26,6 +26,7 @@ var ServerNetworkEvents = {
 	_onPlayerEntity: function (data, clientId) {
 		if (!ige.server.players[clientId]) {
 			ige.server.players[clientId] = new Player(clientId)
+				.drawBounds(false)
 				.streamMode(1)
 				.mount(ige.server.scene1);
 
