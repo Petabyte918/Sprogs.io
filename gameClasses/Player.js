@@ -20,21 +20,32 @@ var Player = IgeEntityBox2d.extend({
 
 			if(ige.box2d) {
 				var fixDefs = self.setUpCollider();
+				fixDefs.push({
+					density: 0.5,
+					friction: 0,
+					restitution: 0.2
+				});
 
 				this.box2dBody({
 					type: 'dynamic',
-					angularDamping: 0.0,
+					linearDamping: 3,
+					angularDamping: 7,
 					allowSleep: true,
 					fixedRotation: false,
 					fixtures: fixDefs
 				});
+
+				this.box2dProperties = {
+					thrustVelocity: 5,          // current velocity
+					rotateVelocity: 2           // divisor to calculate rotation velocity
+				};
 			}
 
 			this.addComponent(IgeVelocityComponent);
 
             this.properties = {
                 thrustVelocity: 0,          // current velocity
-                maxThrustVelocity: 0.2,     // max velocity
+                maxThrustVelocity: 0.3,     // max velocity
                 rotateVelocity: 3,          // divisor to calculate rotation velocity
                 acceleration: 0.01,         // percent of maxThrust to increase by every tick
                 friction: 0.025             // percent of thrust to decrease by every tick
@@ -42,6 +53,8 @@ var Player = IgeEntityBox2d.extend({
 		}
 
 		if (ige.isClient) {
+			self.networkDebugMode = true;
+
 			self.texture(ige.client.textures.ship)
 			.width(96)
 			.height(96);
@@ -89,7 +102,7 @@ var Player = IgeEntityBox2d.extend({
 	tick: function (ctx) {
 		/* CEXCLUDE */
 		if (ige.isServer) {
-			this.handleNonPhysicsMovement();
+			this.handleBox2dMovement();
 		}
 		/* CEXCLUDE */
 
@@ -102,16 +115,25 @@ var Player = IgeEntityBox2d.extend({
 	},
 
 	handleBox2dMovement: function () {
-		var rotateVelocity = 0
+		var thrustVelocity = this.box2dProperties.thrustVelocity;
+		var rotateVelocity = this.box2dProperties.rotateVelocity;
 
 		if (this.controls.left) {
-			rotateVelocity = -this.properties.rotateVelocity;
-		}
-		if (this.controls.right) {
-			rotateVelocity = this.properties.rotateVelocity;
+			this._box2dBody.SetAngularVelocity(-rotateVelocity);
+			this._box2dBody.SetAwake(true);
+		} if (this.controls.right) {
+			this._box2dBody.SetAngularVelocity(rotateVelocity);
+			this._box2dBody.SetAwake(true);
 		}
 
-		this._box2dBody.SetAngularVelocity(rotateVelocity);
+		if (this.controls.thrust) {
+			var angle = this._rotate.z + Math.radians(-90);
+			var xComponent = Math.cos(angle);
+			var yComponent = Math.sin(angle);
+
+			this._box2dBody.SetLinearVelocity(new IgePoint3d(thrustVelocity * xComponent, thrustVelocity * yComponent, 0));
+			this._box2dBody.SetAwake(true);
+		}
 	},
 
 	handleNonPhysicsMovement: function () {
