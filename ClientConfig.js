@@ -1,7 +1,7 @@
 var igeClientConfig = {
 	include: [
 		/* maps */
-		'./assets/maps/Test_10x10.js',
+		'./assets/maps/Green_Islands_75x75.js',
 
 		/* scripts */
 		'./gameClasses/ClientNetworkEvents.js',

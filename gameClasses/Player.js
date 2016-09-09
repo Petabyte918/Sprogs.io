@@ -8,7 +8,7 @@ var Player = IgeEntityBox2d.extend({
 
 		this.drawBounds(false);
 
-		// Rotate to point upwards
+		// Used to tell the server when we give input
 		this.controls = {
 			left: false,
 			right: false,
@@ -16,7 +16,7 @@ var Player = IgeEntityBox2d.extend({
 		};
 
 		if (ige.isServer) {
-			this.translateTo(320, 320, 0);
+			this.translateTo(2325, 2325, 0);
 
 			if(ige.box2d) {
 				var fixDefs = self.setUpCollider();
@@ -89,7 +89,7 @@ var Player = IgeEntityBox2d.extend({
 	tick: function (ctx) {
 		/* CEXCLUDE */
 		if (ige.isServer) {
-			this.handleMovement();
+			this.handleNonPhysicsMovement();
 		}
 		/* CEXCLUDE */
 
@@ -101,7 +101,20 @@ var Player = IgeEntityBox2d.extend({
 		IgeEntityBox2d.prototype.tick.call(this, ctx);
 	},
 
-	handleMovement: function () {
+	handleBox2dMovement: function () {
+		var rotateVelocity = 0
+
+		if (this.controls.left) {
+			rotateVelocity = -this.properties.rotateVelocity;
+		}
+		if (this.controls.right) {
+			rotateVelocity = this.properties.rotateVelocity;
+		}
+
+		this._box2dBody.SetAngularVelocity(rotateVelocity);
+	},
+
+	handleNonPhysicsMovement: function () {
 		// Declare friction here so we can disable it when accelerating
 		var fric = this.properties.friction;
 
@@ -192,7 +205,7 @@ var Player = IgeEntityBox2d.extend({
 		// Points created in Physics Body Editor, set to the origin, rounded and copied over
 		var y_offset = 0.1;
 		var collisionPoly = new IgePoly2d()
-			// .addPoint(0, 0.6 - y_offset)
+			.addPoint(0, 0.45 - y_offset)
 			.addPoint(-0.05, 0.4 - y_offset)
 			.addPoint(-0.2, .075 - y_offset)
 			.addPoint(-0.2, -0.1 - y_offset)

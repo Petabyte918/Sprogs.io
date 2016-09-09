@@ -27,6 +27,7 @@ var Server = IgeClass.extend({
 					// Check if the engine started successfully
 					if (success) {
 						// Create some network commands we will need
+						// Defined in ./gameClasses/ServerNetworkEvents.js
 						ige.network.define('playerEntity', self._onPlayerEntity);
 
 						ige.network.define('playerControlLeftDown', self._onPlayerLeftDown);
@@ -37,8 +38,8 @@ var Server = IgeClass.extend({
 						ige.network.define('playerControlRightUp', self._onPlayerRightUp);
 						ige.network.define('playerControlThrustUp', self._onPlayerThrustUp);
 
-						ige.network.on('connect', self._onPlayerConnect); // Defined in ./gameClasses/ServerNetworkEvents.js
-						ige.network.on('disconnect', self._onPlayerDisconnect); // Defined in ./gameClasses/ServerNetworkEvents.js
+						ige.network.on('connect', self._onPlayerConnect);
+						ige.network.on('disconnect', self._onPlayerDisconnect);
 
 						// Add the network stream component
 						ige.network.addComponent(IgeStreamComponent)
@@ -66,6 +67,16 @@ var Server = IgeClass.extend({
 							.scene(self.mainScene)
 							.drawBounds(true)
 							.mount(ige);
+
+						// Load the tilemap's collisions
+						// Textures are handled by the client
+						ige.addComponent(IgeTiledComponent)
+							.tiled.loadJson(Green_Islands_75x75, function (layerArray, layersById) {
+
+							// Create collision boxes from the layers in the map
+							ige.box2d.staticsFromMap(layersById.collisions);
+							ige.box2d.staticsFromMap(layersById.islands);
+						});
 					}
 				});
 			});
