@@ -20,7 +20,7 @@ var Client = IgeClass.extend({
 		// Load the textures we want to use
 		this.textures = {
 			ship: new IgeTexture('./assets/Pirate_Ship_Top_Down_64x64.png'),
-            testmap: new IgeCellSheet('./assets/mapPack_tilesheet.png', 20, 13)
+			orb: new IgeTexture('./assets/Orb.js')
 		};
 
 		ige.on('texturesLoaded', function () {

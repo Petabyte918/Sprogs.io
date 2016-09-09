@@ -1,13 +1,14 @@
 var igeClientConfig = {
 	include: [
-		/* maps */
+		/* tile maps */
 		'./assets/maps/Green_Islands_75x75.js',
 
-		/* scripts */
+		/* game classes */
 		'./gameClasses/ClientNetworkEvents.js',
 		'./gameClasses/Player.js',
+		'./gameClasses/ThrustParticle.js',
 
-		/* Standard game scripts */
+		/* standard game scripts */
 		'./client.js',
 		'./index.js'
 	]

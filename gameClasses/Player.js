@@ -29,38 +29,59 @@ var Player = IgeEntityBox2d.extend({
 				this.box2dBody({
 					type: 'dynamic',
 					linearDamping: 0,
-					angularDamping: 7,
+					angularDamping: 7.5,
 					allowSleep: true,
 					fixedRotation: false,
 					fixtures: fixDefs
 				});
 
-				this.box2dProperties = {
+				this.serverProperties = {
 					thrustVelocity: 0,          // current velocity
 					maxThrustVelocity: 8,     // max velocity
-					rotationDivisor: 3,          // divisor to calculate rotation velocity
-					acceleration: 0.05,         // percent of maxThrust to increase by every tick
+					rotationDivisor: 3.3,          // divisor to calculate rotation velocity
+					acceleration: 0.03,         // percent of maxThrust to increase by every tick
 					friction: 0.04             // percent of thrust to decrease by every tick
 				};
 			}
 
 			this.addComponent(IgeVelocityComponent);
-
-            this.properties = {
-                thrustVelocity: 0,          // current velocity
-                maxThrustVelocity: 0.3,     // max velocity
-                rotateVelocity: 3,          // divisor to calculate rotation velocity
-                acceleration: 0.01,         // percent of maxThrust to increase by every tick
-                friction: 0.025             // percent of thrust to decrease by every tick
-            };
 		}
 
 		if (ige.isClient) {
-			self.networkDebugMode = true;
+			this.networkDebugMode = true;
 
-			self.texture(ige.client.textures.ship)
+			this.clientProperties = {
+				prev_position: new IgePoint3d(0,0,0)
+			};
+
+			this.switches = {
+				thrustEmitterStarted: false
+			};
+
+			this.texture(ige.client.textures.ship)
 			.width(96)
 			.height(96);
+
+			// Add a particle emitter for the thrust particles
+			// TODO: Add different quantities and velocities based on player velocity
+			this.thrustEmitter = new IgeParticleEmitter()
+			// Set the particle entity to generate for each particle
+				.particle(ThrustParticle)
+				// Set particle life to 300ms
+				.lifeBase(300)
+				// Set output to 60 particles a second (1000ms)
+				.quantityBase(20)
+				.quantityTimespan(1000)
+				// Set the particle's death opacity to zero so it fades out as it's lifespan runs out
+				.deathOpacityBase(0)
+				// Set velocity vector to y = 0.05, with variance values
+				.velocityVector(new IgePoint3d(0, 0.05, 0), new IgePoint3d(-0.16, 0.03, 0), new IgePoint3d(0.16, 0.15, 0))
+				// Mount new particles to the object scene
+				.particleMountTarget(ige.client.mainScene)
+				// Move the particle emitter to the bottom of the ship
+				.translateTo(0, 0, 0)
+				// Mount the emitter to the ship
+				.mount(this);
 		}
 
 		// Define the data sections that will be included in the stream
@@ -111,6 +132,8 @@ var Player = IgeEntityBox2d.extend({
 
 		if (ige.isClient) {
 			this.handleInput();
+
+			this.handleEmitters();
 		}
 
 		// Call the IgeEntity (super-class) tick() method
@@ -119,10 +142,10 @@ var Player = IgeEntityBox2d.extend({
 
 	handleBox2dMovement: function () {
 		// Declare friction here so we can disable it when accelerating
-		var fric = this.box2dProperties.friction;
+		var fric = this.serverProperties.friction;
 
 		// Calculate rotateVelocity based on current thrustVelocity
-		var rotateVelocity = this.box2dProperties.thrustVelocity / this.box2dProperties.rotationDivisor;
+		var rotateVelocity = this.serverProperties.thrustVelocity / this.serverProperties.rotationDivisor;
 
 		// Whenever we listen for input, awake the body
 		if (this.controls.left) {
@@ -135,8 +158,8 @@ var Player = IgeEntityBox2d.extend({
 
 		// Apply acceleration and disable friction
 		if (this.controls.thrust) {
-			if (this.box2dProperties.thrustVelocity < this.box2dProperties.maxThrustVelocity) {
-				this.box2dProperties.thrustVelocity += this.box2dProperties.maxThrustVelocity * this.box2dProperties.acceleration;
+			if (this.serverProperties.thrustVelocity < this.serverProperties.maxThrustVelocity) {
+				this.serverProperties.thrustVelocity += this.serverProperties.maxThrustVelocity * this.serverProperties.acceleration;
 				fric = 0;
 			}
 
@@ -149,40 +172,10 @@ var Player = IgeEntityBox2d.extend({
 		var yComponent = Math.sin(angle);
 
 		// Always apply velocity in the direction of the ship
-		this._box2dBody.SetLinearVelocity(new IgePoint3d(this.box2dProperties.thrustVelocity * xComponent, this.box2dProperties.thrustVelocity * yComponent, 0));
+		this._box2dBody.SetLinearVelocity(new IgePoint3d(this.serverProperties.thrustVelocity * xComponent, this.serverProperties.thrustVelocity * yComponent, 0));
 
 		// Apply friction to the current thrustVelocity
-		this.box2dProperties.thrustVelocity *= 1 - fric;
-	},
-
-	handleNonPhysicsMovement: function () {
-		// Declare friction here so we can disable it when accelerating
-		var fric = this.properties.friction;
-
-		// Calculate rotateVelocity based on current thrustVelocity
-		var rotateVelocity = this.properties.thrustVelocity / this.properties.rotateVelocity;
-
-		if (this.controls.left) {
-			this.rotateBy(0, 0, Math.radians(-rotateVelocity * ige._tickDelta));
-		}
-
-		if (this.controls.right) {
-			this.rotateBy(0, 0, Math.radians(rotateVelocity * ige._tickDelta));
-		}
-
-		// Apply acceleration and disable friction
-		if (this.controls.thrust) {
-			if (this.properties.thrustVelocity < this.properties.maxThrustVelocity) {
-				this.properties.thrustVelocity += this.properties.maxThrustVelocity * this.properties.acceleration;
-				fric = 0;
-			}
-		}
-
-		// Always apply velocity in the direction the ship is pointing
-		this.velocity.byAngleAndPower(this._rotate.z + Math.radians(-90), this.properties.thrustVelocity);
-
-		// Apply friction to the current thrustVelocity
-		this.properties.thrustVelocity *= 1 - fric;
+		this.serverProperties.thrustVelocity *= 1 - fric;
 	},
 
 	handleInput: function () {
@@ -242,7 +235,6 @@ var Player = IgeEntityBox2d.extend({
 	},
 
 	setUpCollider: function () {
-
 		// Points created in Physics Body Editor, set to the origin, rounded and copied over
 		var y_offset = 0.1;
 		var collisionPoly = new IgePoly2d()
@@ -276,6 +268,29 @@ var Player = IgeEntityBox2d.extend({
 		}
 
 		return fixDefs;
+	},
+
+	handleEmitters: function () {
+		var clientVel = this.getClientVelocity();
+		if (clientVel > 1 && !this.switches.thrustEmitterStarted) {
+			this.thrustEmitter.start();
+			this.switches.thrustEmitterStarted = true;
+			console.log("Start")
+		} else if (clientVel < 0.75 && this.switches.thrustEmitterStarted){
+			this.thrustEmitter.stop();
+			this.switches.thrustEmitterStarted = false;
+			console.log("Stop")
+		}
+	},
+
+	// Returns the client's velocity in units/tick
+	getClientVelocity: function () {
+		var deltaX = this.worldPosition().x - this.clientProperties.prev_position.x;
+		var deltaY = this.worldPosition().y - this.clientProperties.prev_position.y;
+		var vel = Math.sqrt((deltaX * deltaX) + (deltaY * deltaY));
+
+		this.clientProperties.prev_position = this.worldPosition();
+		return vel
 	}
 });
 
