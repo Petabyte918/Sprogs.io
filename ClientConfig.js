@@ -5,6 +5,8 @@ var igeClientConfig = {
 
 		/* game classes */
 		'./gameClasses/ClientNetworkEvents.js',
+		'./gameClasses/Box.js',
+		'./gameClasses/Projectile.js',
 		'./gameClasses/Player.js',
 		'./gameClasses/ThrustParticle.js',
 

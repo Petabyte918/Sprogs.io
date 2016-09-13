@@ -57,6 +57,15 @@ var ServerNetworkEvents = {
 
 	_onPlayerThrustUp: function (data, clientId) {
 		ige.server.players[clientId].controls.thrust = false;
+	},
+
+	_onPlayerFireDown: function (data, clientId) {
+		ige.server.players[clientId].controls.fire = true;
+		ige.server.players[clientId]._mouseAngleFromPlayer = data;
+	},
+
+	_onPlayerFireUp: function (data, clientId) {
+		ige.server.players[clientId].controls.fire = false;
 	}
 };
 

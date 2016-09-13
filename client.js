@@ -54,6 +54,7 @@ var Client = IgeClass.extend({
 
 						self.uiScene = new IgeScene2d()
 							.id('uiScene')
+							.depth(10)
 							.ignoreCamera(true)
 							.mount(self.mainScene);
 
@@ -64,6 +65,7 @@ var Client = IgeClass.extend({
 							.id('vp1')
 							.autoSize(true)	// auto resizes with the window
 							.scene(self.mainScene)
+							.minimumVisibleArea(700,700) // width in pixels and height in pixels will always be seen. Can abuse if stretched to extremes
 							.drawBounds(false)
 							.mount(ige);
 
@@ -96,6 +98,7 @@ var Client = IgeClass.extend({
 						ige.input.mapAction('left', ige.input.key.a);
 						ige.input.mapAction('right', ige.input.key.d);
 						ige.input.mapAction('thrust', ige.input.key.w);
+						ige.input.mapAction('fire', ige.input.mouse.button1);
 
 						// Ask the server to create an entity for us
 						ige.network.send('playerEntity');

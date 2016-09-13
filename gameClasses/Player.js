@@ -3,6 +3,7 @@ var Player = IgeEntityBox2d.extend({
 
 	init: function () {
 		IgeEntityBox2d.prototype.init.call(this);
+		this.category("Player");
 
 		var self = this;
 
@@ -10,19 +11,25 @@ var Player = IgeEntityBox2d.extend({
 
 		this._score = 0;
 		this._thrustVelocity = 0;
+		this._mouseAngleFromPlayer = 0;
 
 		// Used to tell the server when we give input
 		this.controls = {
 			left: false,
 			right: false,
-			thrust: false
+			thrust: false,
+			fire: false
 		};
+
+		var spriteScale = 2;		// the texture and collider scale
 
 		if (ige.isServer) {
 			this.translateTo(2325, 2325, 0);
 
 			if(ige.box2d) {
-				var fixDefs = self.setUpCollider();
+				// ige.box2d.networkDebugMode(true); // adds additional console output for the debugger
+
+				var fixDefs = self.setUpCollider(spriteScale);
 				fixDefs.push({
 					density: 0.5,
 					friction: 0,
@@ -39,10 +46,12 @@ var Player = IgeEntityBox2d.extend({
 				});
 
 				this.serverProperties = {
+					isDead: false,
+					health: 100,
 					thrustVelocity: 0,          // current velocity
-					maxThrustVelocity: 8,     	/// max velocity
+					maxThrustVelocity: 8,     	// max velocity
 					rotationDivisor: 3.3,		// divisor to calculate rotation velocity
-					acceleration: 0.03,         // percent of maxThrust to increase by every tick
+					acceleration: 0.025,        // percent of maxThrust to increase by every tick
 					friction: 0.04              // percent of thrust to decrease by every tick
 				};
 			}
@@ -51,7 +60,6 @@ var Player = IgeEntityBox2d.extend({
 		}
 
 		if (ige.isClient) {
-			this.networkDebugMode = true;
 
 			this.clientProperties = {
 				prev_position: new IgePoint3d(0,0,0)
@@ -62,8 +70,8 @@ var Player = IgeEntityBox2d.extend({
 			};
 
 			this.texture(ige.client.textures.ship)
-			.width(96)
-			.height(96);
+			.width(32 * spriteScale)
+			.height(32 * spriteScale);
 
 			// Add a particle emitter for the thrust particles
 			// TODO: Add different quantities and velocities based on player velocity
@@ -129,7 +137,6 @@ var Player = IgeEntityBox2d.extend({
 				return this._thrustVelocity;
 			}
 		}
-
 		// The section was not one that we handle here, so pass this
 		// to the super-class streamSectionData() method - it handles
 		// the "transform" section by itself
@@ -144,7 +151,7 @@ var Player = IgeEntityBox2d.extend({
 	tick: function (ctx) {
 		/* CEXCLUDE */
 		if (ige.isServer) {
-			this.handleBox2dMovement();
+			this.handleControls();
 		}
 		/* CEXCLUDE */
 
@@ -158,7 +165,14 @@ var Player = IgeEntityBox2d.extend({
 		IgeEntityBox2d.prototype.tick.call(this, ctx);
 	},
 
-	handleBox2dMovement: function () {
+	handleControls: function () {
+		// Stop movement if we are dead
+		if (this.serverProperties.isDead) {
+			for (var control in this.controls) {
+				this.controls[control] = false;
+			}
+		}
+
 		// Declare friction here so we can disable it when accelerating
 		var fric = this.serverProperties.friction;
 
@@ -198,7 +212,17 @@ var Player = IgeEntityBox2d.extend({
 			: this.serverProperties.thrustVelocity = 0;
 
 		// Set _thrustVelocity which is streamed to the client
-		this._thrustVelocity = this.serverProperties.thrustVelocity;
+		if (this.serverProperties != 0) this._thrustVelocity = this.serverProperties.thrustVelocity;
+
+		if (this.controls.fire) {
+			this.controls.fire = false;
+
+			var myPos = this.worldPosition();
+
+			new Projectile()
+				.mount(ige.server.scene1)
+				.shoot(myPos, this._mouseAngleFromPlayer);
+		}
 	},
 
 	handleInput: function () {
@@ -255,11 +279,37 @@ var Player = IgeEntityBox2d.extend({
 				ige.network.send('playerControlThrustUp');
 			}
 		}
+
+		if (ige.input.actionState('fire')) {
+			if (!this.controls.fire) {
+				// Record the new state
+				this.controls.fire = true;
+
+				var mousePos = ige._currentViewport.mousePos();
+				var myPos = this.worldPosition();
+
+				var dx = mousePos.x - myPos.x;
+				var dy = mousePos.y - myPos.y;
+				var rot = Math.atan2(dy, dx);
+
+				this._mouseAngleFromPlayer = rot;
+				// Tell the server about our control change
+				ige.network.send('playerControlFireDown', rot);
+			}
+		} else {
+			if (this.controls.fire) {
+				// Record the new state
+				this.controls.fire = false;
+
+				// Tell the server about our control change
+				ige.network.send('playerControlFireUp');
+			}
+		}
 	},
 
-	setUpCollider: function () {
+	setUpCollider: function (scale) {
 		// Points created in Physics Body Editor, set to the origin, rounded and copied over
-		var y_offset = 0.1;
+		var y_offset = 0.105;
 		var collisionPoly = new IgePoly2d()
 			.addPoint(0, 0.45 - y_offset)
 			.addPoint(-0.05, 0.4 - y_offset)
@@ -274,7 +324,7 @@ var Player = IgeEntityBox2d.extend({
 			.addPoint(0.05, 0.4 - y_offset);
 
 		// Scale it up to fit texture
-		collisionPoly.multiply(-4);
+		collisionPoly.multiply(-scale);
 
 		// Now convert this polygon into an array of triangles
 		var triangles = collisionPoly.triangulate();
@@ -302,6 +352,27 @@ var Player = IgeEntityBox2d.extend({
 			this.switches.thrustEmitterStarted = false;
 		}
 	},
+
+	hurt: function (damage) {
+		if (ige.isServer) {
+			this.serverProperties.health -= damage;
+
+			if (this.serverProperties.health <= 0) {
+				this.respawn();
+			}
+		}
+	},
+
+	respawn: function () {
+		this.serverProperties.isDead = true;
+
+		var self = this;
+		new IgeTimeout(function () {
+			self.translateTo(2325, 2325, 0);
+			self.serverProperties.health = 100;
+			self.serverProperties.isDead = false;
+		}, 2500);
+	}
 });
 
 if (typeof(module) !== 'undefined' && typeof(module.exports) !== 'undefined') { module.exports = Player; }

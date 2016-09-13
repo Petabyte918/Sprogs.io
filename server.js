@@ -33,10 +33,12 @@ var Server = IgeClass.extend({
 						ige.network.define('playerControlLeftDown', self._onPlayerLeftDown);
 						ige.network.define('playerControlRightDown', self._onPlayerRightDown);
 						ige.network.define('playerControlThrustDown', self._onPlayerThrustDown);
+						ige.network.define('playerControlFireDown', self._onPlayerFireDown);
 
 						ige.network.define('playerControlLeftUp', self._onPlayerLeftUp);
 						ige.network.define('playerControlRightUp', self._onPlayerRightUp);
 						ige.network.define('playerControlThrustUp', self._onPlayerThrustUp);
+						ige.network.define('playerControlFireUp', self._onPlayerFireUp);
 
 						ige.network.on('connect', self._onPlayerConnect);
 						ige.network.on('disconnect', self._onPlayerDisconnect);
@@ -77,6 +79,11 @@ var Server = IgeClass.extend({
 							ige.box2d.staticsFromMap(layersById.collisions);
 							ige.box2d.staticsFromMap(layersById.islands);
 						});
+
+						new Box()
+							.translateTo(2220, 2220, 0)
+							.streamMode(1)
+							.mount(self.scene1);
 					}
 				});
 			});
