@@ -8,12 +8,10 @@ var ClientNetworkEvents = {
 	 * @private
 	 */
 	_onPlayerEntity: function (data) {
+		ige.client._myPlayerId = data;
 		if (ige.$(data)) {
 			ige.client.vp1.camera.trackTranslate(ige.$(data), 50);
-
-			// Set the time stream UI entity to monitor our player entity
-			// time stream data
-			ige.client.tsVis.monitor(ige.$(data));
+			
 		} else {
 			// The client has not yet received the entity via the network
 			// stream so lets ask the stream to tell us when it creates a

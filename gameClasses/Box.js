@@ -16,6 +16,10 @@ var Box = IgeEntityBox2d.extend({
                 bullet: false,
                 fixedRotation: false,
                 fixtures: [{
+                    filter: {
+                        categoryBits: 0x0002,
+                        maskBits: 0xFFFF
+                    },
                     density: 1.0,
                     friction: 0.5,
                     restitution: 0.2,
@@ -28,6 +32,8 @@ var Box = IgeEntityBox2d.extend({
 
         if (ige.isClient) {
             // Define the texture this entity will use
+            self._textureColor = "#68b8df";
+            // self._outlineColor = "#68b8df";
             self.texture(ige.client.textures.orb);
                 // .width(40)
                 // .height(40);

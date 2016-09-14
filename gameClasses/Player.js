@@ -46,6 +46,8 @@ var Player = IgeEntityBox2d.extend({
 				});
 
 				this.serverProperties = {
+					timeToHit: 0,
+					fireRate: 500,
 					isDead: false,
 					health: 100,
 					thrustVelocity: 0,          // current velocity
@@ -156,7 +158,9 @@ var Player = IgeEntityBox2d.extend({
 		/* CEXCLUDE */
 
 		if (ige.isClient) {
-			this.handleInput();
+			if (this.isMyPlayer()) {
+				this.handleInput();
+			}
 
 			this.handleEmitters();
 		}
@@ -214,7 +218,8 @@ var Player = IgeEntityBox2d.extend({
 		// Set _thrustVelocity which is streamed to the client
 		if (this.serverProperties != 0) this._thrustVelocity = this.serverProperties.thrustVelocity;
 
-		if (this.controls.fire) {
+		if (this.controls.fire && this.serverProperties.timeToHit < ige.currentTime()) {
+			this.serverProperties.timeToHit = this.serverProperties.fireRate + ige.currentTime();
 			this.controls.fire = false;
 
 			var myPos = this.worldPosition();
@@ -226,6 +231,36 @@ var Player = IgeEntityBox2d.extend({
 	},
 
 	handleInput: function () {
+		if (ige.input.actionState('fire')) {
+			if (!this.controls.fire) {
+				console.log("Pls");
+				// Record the new state
+				this.controls.fire = true;
+
+				var mousePos = ige._currentViewport.mousePos();
+				var myPos = this.worldPosition();
+
+				var dx = mousePos.x - myPos.x;
+				var dy = mousePos.y - myPos.y;
+				var rot = Math.atan2(dy, dx);
+
+				// this._mouseAngleFromPlayer = rot;
+
+				// console.log(rot * 180/Math.PI);
+				// console.log("whut");
+
+				ige.network.send('playerControlFireDown', rot);
+			}
+		} else {
+			if (this.controls.fire) {
+				// Record the new state
+				this.controls.fire = false;
+
+				// Tell the server about our control change
+				ige.network.send('playerControlFireUp');
+			}
+		}
+
 		if (ige.input.actionState('left')) {
 			if (!this.controls.left) {
 				// Record the new state
@@ -279,32 +314,6 @@ var Player = IgeEntityBox2d.extend({
 				ige.network.send('playerControlThrustUp');
 			}
 		}
-
-		if (ige.input.actionState('fire')) {
-			if (!this.controls.fire) {
-				// Record the new state
-				this.controls.fire = true;
-
-				var mousePos = ige._currentViewport.mousePos();
-				var myPos = this.worldPosition();
-
-				var dx = mousePos.x - myPos.x;
-				var dy = mousePos.y - myPos.y;
-				var rot = Math.atan2(dy, dx);
-
-				this._mouseAngleFromPlayer = rot;
-				// Tell the server about our control change
-				ige.network.send('playerControlFireDown', rot);
-			}
-		} else {
-			if (this.controls.fire) {
-				// Record the new state
-				this.controls.fire = false;
-
-				// Tell the server about our control change
-				ige.network.send('playerControlFireUp');
-			}
-		}
 	},
 
 	setUpCollider: function (scale) {
@@ -333,6 +342,10 @@ var Player = IgeEntityBox2d.extend({
 		var fixDefs = [];
 		for (var i = 0; i < triangles.length; i++) {
 			fixDefs.push({
+				filter: {
+					categoryBits: 0x0002,
+					maskBits: 0xFFFF
+				},
 				shape: {
 					type: 'polygon',
 					data: triangles[i]
@@ -357,7 +370,7 @@ var Player = IgeEntityBox2d.extend({
 		if (ige.isServer) {
 			this.serverProperties.health -= damage;
 
-			if (this.serverProperties.health <= 0) {
+			if (this.serverProperties.health <= 0 && !this.serverProperties.isDead) {
 				this.respawn();
 			}
 		}
@@ -369,9 +382,14 @@ var Player = IgeEntityBox2d.extend({
 		var self = this;
 		new IgeTimeout(function () {
 			self.translateTo(2325, 2325, 0);
+			self.rotateTo(0,0,0);
 			self.serverProperties.health = 100;
 			self.serverProperties.isDead = false;
 		}, 2500);
+	},
+
+	isMyPlayer: function () {
+		return ige.client._myPlayerId == this.id();
 	}
 });
 

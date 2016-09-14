@@ -4,7 +4,10 @@ var ThrustParticle = IgeEntityBox2d.extend({
 	init: function (emitter) {
 		this._emitter = emitter;
 		IgeEntityBox2d.prototype.init.call(this);
-		
+
+		this._textureColor = "#68b8df";
+		this._outlineColor = '#47a7d6';
+
 		// Setup the particle default values
 		this.addComponent(IgeVelocityComponent)
 			.texture(ige.client.textures.orb)

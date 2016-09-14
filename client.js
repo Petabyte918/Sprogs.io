@@ -9,7 +9,7 @@ var Client = IgeClass.extend({
 		ige.addComponent(IgeNetIoComponent);
 
         // Enable The editor
-        ige.addComponent(IgeEditorComponent);
+        // ige.addComponent(IgeEditorComponent);
 
         // Implement our game methods
 		this.implement(ClientNetworkEvents);
@@ -29,7 +29,7 @@ var Client = IgeClass.extend({
 				// Check if the engine started successfully
 				if (success) {
 					// Start the networking (you can do this elsewhere if needed)
-					ige.network.start('http://localhost:2000', function () {
+					ige.network.start('http://localhost:3000', function () {
 						// Setup the network command listeners
 						ige.network.define('playerEntity', self._onPlayerEntity); // defined in ./gameClasses/ClientNetworkEvents.js
 
@@ -102,10 +102,6 @@ var Client = IgeClass.extend({
 
 						// Ask the server to create an entity for us
 						ige.network.send('playerEntity');
-
-						// Enable console logging of network messages but only show 10 of them
-						// ige.network.debugMax(10);
-						// ige.network.debug(true);
 					});
 				}
 			});

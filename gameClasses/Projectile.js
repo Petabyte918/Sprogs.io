@@ -17,6 +17,10 @@ var Projectile = IgeEntityBox2d.extend({
                     allowSleep: false,
                     bullet: true,
                     fixtures: [{
+                        filter: {
+                            categoryBits: 0x0003,           // What level the collider is on
+                            maskBits: 0x0002                // What level it listens on
+                        },
                         shape: {
                             type: 'circle',
                             data: {
@@ -28,6 +32,8 @@ var Projectile = IgeEntityBox2d.extend({
 
                 var serverProperties = {
                     damage: 34,
+                    velocity: 40,
+                    distanceFromPlayer: 40
                 };
 
                 this.serverProperties = serverProperties;
@@ -53,6 +59,7 @@ var Projectile = IgeEntityBox2d.extend({
         }
 
         if (ige.isClient) {
+            self._textureColor = "#4f585c";
             self.texture(ige.client.textures.orb)
                 .width(5)
                 .height(5)
@@ -60,8 +67,8 @@ var Projectile = IgeEntityBox2d.extend({
     },
     
     shoot: function (pos, angle) {
-        var dis = 40;
-        var vel = 40;
+        var dis = this.serverProperties.distanceFromPlayer;
+        var vel = this.serverProperties.velocity;
         
         var dx = Math.cos(angle);
         var dy = Math.sin(angle);
