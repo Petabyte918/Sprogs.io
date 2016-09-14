@@ -52,7 +52,7 @@ var Player = IgeEntityBox2d.extend({
 					health: 100,
 					thrustVelocity: 0,          // current velocity
 					maxThrustVelocity: 7,     	// max velocity
-					rotationDivisor: 3.1,		// divisor to calculate rotation velocity
+					rotationDivisor: 3.3,		// divisor to calculate rotation velocity
 					acceleration: 0.025,        // percent of maxThrust to increase by every tick
 					friction: 0.04              // percent of thrust to decrease by every tick
 				};
@@ -459,9 +459,20 @@ var Player = IgeEntityBox2d.extend({
 	handleGraphics: function () {
 		if (this._playerUsername && !this.nameTag) {
 			this.nameTag = new IgeUiLabel()
-					.translateTo(0,40,0)
 					.value(this._playerUsername)
-					.mount(this);
+					.mount(ige.client.scene1);
+
+			var myPlayer = this;
+
+			// Overwrite the tick function to track my player
+			this.nameTag.tick = function (ctx) {
+				var myPlayerPos = myPlayer.worldPosition();
+				var offset = -40;
+				this.translateTo(myPlayerPos.x, myPlayerPos.y + offset, 0);
+
+				// Call the IgeUiLabel (super-class) tick() method
+				IgeUiLabel.prototype.tick.call(this, ctx);
+			}
 		} else if (this.nameTag) {
 			if (this.nameTag.value != this._playerUsername) {
 				this.nameTag.value = this._playerUsername;

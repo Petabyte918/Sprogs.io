@@ -3,3 +3,4 @@ assets/temp
 npm-debug.log
 run.bat
 node_modules
+deploy

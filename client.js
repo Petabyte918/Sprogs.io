@@ -65,7 +65,7 @@ var Client = IgeClass.extend({
 							.id('vp1')
 							.autoSize(true)	// auto resizes with the window
 							.scene(self.mainScene)
-							.minimumVisibleArea(700,700) // width in pixels and height in pixels will always be seen. Can abuse if stretched to extremes
+							.minimumVisibleArea(800, 800) // width in pixels and height in pixels will always be seen. Can abuse if stretched to extremes
 							.drawBounds(false)
 							.mount(ige);
 
@@ -115,16 +115,18 @@ var Client = IgeClass.extend({
 		// give a key for the button
 		window.addEventListener("keyup", function (e) {
 			if (e.keyCode == "13" && !ige.client._myPlayerId) {
-				document.getElementById('sendName').click();			}
+				document.getElementById('sendName').click();
+			}
 		}, false);
 
 
-		self.panCameraToRandomPoint();
-		self.panCameraToRandomPoint(15 * 1000);
+		ige.client.vp1.camera.translateTo(2325, 2325, 0);
+
+		self.panCameraToPoint(undefined, undefined, 15 * 1000);
 
 		self.panController = new IgeInterval(function () {
-			self.panCameraToRandomPoint(15 * 1000);
-		}, 5000);
+			self.panCameraToPoint(undefined, undefined, 10 * 1000);
+		}, 7000);
 	},
 
 	connectAndStartGame: function () {
@@ -138,15 +140,17 @@ var Client = IgeClass.extend({
 		ige.client.panController.cancel();
 	},
 
-	panCameraToRandomPoint: function (easing) {
-		if (!easing) easing = 0;
+	panCameraToPoint: function (x, y, easing) {
+		ige.client.vp1.camera._translate.tween().stopAll();
+
 		var lowerBound = 500;
 		var upperBound = 4000;
 
-		var x = getRandomInt(lowerBound, upperBound);
-		var y = getRandomInt(lowerBound, upperBound);
-		
-		ige.client.vp1.camera.panTo( new IgePoint3d(x, y, 0), easing);
+		if (easing == undefined) easing = 0;
+		if (x == undefined) x = getRandomInt(lowerBound, upperBound);
+		if (y == undefined) y = getRandomInt(lowerBound, upperBound);
+
+		ige.client.vp1.camera.panTo(new IgePoint3d(x, y, 0), easing);
 	}
 });
 
