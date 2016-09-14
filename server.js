@@ -87,6 +87,38 @@ var Server = IgeClass.extend({
 					}
 				});
 			});
+	},
+
+	addPlayerToList: function (clientId) {
+		ige.server.players[clientId] = new Player(clientId)
+			.drawBounds(false)
+			.streamMode(1)
+			.mount(ige.server.scene1);
+
+		console.log("A user has joined the server");
+
+		var count = this.getOnlineUsers();
+
+		console.log(count + " users online");
+	},
+
+	removePlayerFromList: function (clientId) {
+		delete ige.server.players[clientId];
+		console.log("A user has left the server");
+
+		var count = this.getOnlineUsers();
+
+		console.log(count + " users online");
+	},
+
+	getOnlineUsers: function () {
+		var count = 0;
+
+		for (var playerId in ige.server.players) {
+			count++;
+		}
+
+		return count;
 	}
 });
 

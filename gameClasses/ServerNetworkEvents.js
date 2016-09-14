@@ -19,16 +19,13 @@ var ServerNetworkEvents = {
 
 			// Remove the reference to the player entity
 			// so that we don't leak memory
-			delete ige.server.players[clientId];
+			ige.server.removePlayerFromList(clientId);
 		}
 	},
 
 	_onPlayerEntity: function (data, clientId) {
 		if (!ige.server.players[clientId]) {
-			ige.server.players[clientId] = new Player(clientId)
-				.drawBounds(false)
-				.streamMode(1)
-				.mount(ige.server.scene1);
+			ige.server.addPlayerToList(clientId);
 
 			// Tell the client to track their player entity
 			ige.network.send('playerEntity', ige.server.players[clientId].id(), clientId);
