@@ -11,6 +11,7 @@ var Player = IgeEntityBox2d.extend({
 		this._health = 100;
 		this._thrustVelocity = 0;
 		this._mouseAngleFromPlayer = 0;
+		this._playerUsername;
 
 		// Used to tell the server when we give input
 		this.controls = {
@@ -50,8 +51,8 @@ var Player = IgeEntityBox2d.extend({
 					isDead: false,
 					health: 100,
 					thrustVelocity: 0,          // current velocity
-					maxThrustVelocity: 8,     	// max velocity
-					rotationDivisor: 3.3,		// divisor to calculate rotation velocity
+					maxThrustVelocity: 7,     	// max velocity
+					rotationDivisor: 3.1,		// divisor to calculate rotation velocity
 					acceleration: 0.025,        // percent of maxThrust to increase by every tick
 					friction: 0.04              // percent of thrust to decrease by every tick
 				};
@@ -61,11 +62,6 @@ var Player = IgeEntityBox2d.extend({
 		}
 
 		if (ige.isClient) {
-
-			this.clientProperties = {
-				prev_position: new IgePoint3d(0,0,0)
-			};
-
 			this.switches = {
 				thrustEmitterStarted: false,
 				explosionEmitterStarted: false
@@ -79,7 +75,7 @@ var Player = IgeEntityBox2d.extend({
 		}
 
 		// Define the data sections that will be included in the stream
-		this.streamSections(['transform', 'score', 'thrustVelocity', 'health']);
+		this.streamSections(['transform', 'score', 'thrustVelocity', 'health', 'playerUsername']);
 	},
 
 	/**
@@ -121,6 +117,19 @@ var Player = IgeEntityBox2d.extend({
 			}
 		}
 
+		if (sectionId === 'playerUsername') {
+			// Check if the server sent us data, if not we are supposed
+			// to return the data instead of set it
+			if (data) {
+				// We have been given new data!
+				this._playerUsername = data;
+				return;
+			} else {
+				// Return current data
+				return this._playerUsername;
+			}
+		}
+
 		if (sectionId === 'thrustVelocity') {
 			// Check if the server sent us data, if not we are supposed
 			// to return the data instead of set it
@@ -157,6 +166,7 @@ var Player = IgeEntityBox2d.extend({
 				this.handleInput();
 			}
 
+			this.handleGraphics();
 			this.handleEmitters();
 		}
 
@@ -444,6 +454,24 @@ var Player = IgeEntityBox2d.extend({
 			.translateTo(0, 0, 0)
 			// Mount the emitter to the ship
 			.mount(this);
+	},
+
+	handleGraphics: function () {
+		if (this._playerUsername && !this.nameTag) {
+			this.nameTag = new IgeUiLabel()
+					.translateTo(0,40,0)
+					.value(this._playerUsername)
+					.mount(this);
+		} else if (this.nameTag) {
+			if (this.nameTag.value != this._playerUsername) {
+				this.nameTag.value = this._playerUsername;
+			}
+		}
+	},
+
+	setPlayerUsername: function (pun) {
+		this._playerUsername = pun;
+		return this;
 	}
 });
 

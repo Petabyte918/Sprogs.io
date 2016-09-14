@@ -89,26 +89,29 @@ var Server = IgeClass.extend({
 			});
 	},
 
-	addPlayerToList: function (clientId) {
+	addPlayerToList: function (username, clientId) {
 		ige.server.players[clientId] = new Player(clientId)
 			.drawBounds(false)
+			.setPlayerUsername(username)
 			.streamMode(1)
 			.mount(ige.server.scene1);
 
-		console.log("A user has joined the server");
+		// ige.server.players[clientId]._playerUsername = username;
 
 		var count = this.getOnlineUsers();
 
-		console.log(count + " users online");
+		console.log(ige.server.players[clientId]._playerUsername + " has joined the server");
+		console.log(count + " user(s) online");
 	},
 
 	removePlayerFromList: function (clientId) {
+		var username = ige.server.players[clientId]._playerUsername;
 		delete ige.server.players[clientId];
-		console.log("A user has left the server");
-
+		
 		var count = this.getOnlineUsers();
 
-		console.log(count + " users online");
+		console.log(username + " has left the server");
+		console.log(count + " user(s) online");
 	},
 
 	getOnlineUsers: function () {

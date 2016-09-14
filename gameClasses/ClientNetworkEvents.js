@@ -8,9 +8,9 @@ var ClientNetworkEvents = {
 	 * @private
 	 */
 	_onPlayerEntity: function (data) {
-		ige.client._myPlayerId = data;
-		if (ige.$(data)) {
-			ige.client.vp1.camera.trackTranslate(ige.$(data), 50);
+		ige.client._myPlayerId = data.id;
+		if (ige.$(data.id)) {
+			ige.client.vp1.camera.trackTranslate(ige.$(data.id), 50);
 			
 		} else {
 			// The client has not yet received the entity via the network
@@ -19,9 +19,11 @@ var ClientNetworkEvents = {
 			// should be tracking!
 			var self = this;
 			self._eventListener = ige.network.stream.on('entityCreated', function (entity) {
-				if (entity.id() === data) {
+				if (entity.id() === data.id) {
 					// Tell the camera to track out player entity
-					ige.client.vp1.camera.trackTranslate(ige.$(data), 0);
+					var player = ige.$(data.id);
+					player.setPlayerUsername(data.username);
+					ige.client.vp1.camera.trackTranslate(player, 0);
 
 					// Set the time stream UI entity to monitor our player entity
 					// time stream data

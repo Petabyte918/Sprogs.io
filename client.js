@@ -109,39 +109,44 @@ var Client = IgeClass.extend({
 	},
 
 	handleMainPanMenu: function (self) {
-		// connect when we press enter
-		window.addEventListener("keydown", function (e) {
+		//display the menu and pan
+		document.getElementById('nameArea').style.display = 'block';
+
+		// give a key for the button
+		window.addEventListener("keyup", function (e) {
 			if (e.keyCode == "13" && !ige.client._myPlayerId) {
-				self.panObject.destroy();
-				self.panObjectController.cancel();
-				// Ask the server to create an entity for us
-				ige.network.send('playerEntity');
-			}
+				document.getElementById('sendName').click();			}
 		}, false);
 
-		//display the menu and pan
-		var lowerBound = 300;
-		var upperBound = 4100;
 
-		self.panObject = new IgeEntity()
-		// .texture(self.textures.orb)
-			.translateTo(getRandomInt(lowerBound, upperBound), getRandomInt(lowerBound, upperBound), 0)
-			.mount(self.mainScene);
+		self.panCameraToRandomPoint();
+		self.panCameraToRandomPoint(15 * 1000);
 
-		ige.client.vp1.camera.trackTranslate(self.panObject, 300);
-
-		self.panObjectController = new IgeInterval(function () {
-			var x = getRandomInt(lowerBound, upperBound);
-			var y = getRandomInt(lowerBound, upperBound);
-			console.log(x,y);
-
-			self.panObject._translate.tween()
-				.stepTo({
-					x: x,
-					y: y
-				}, 1000)
-				.start()
+		self.panController = new IgeInterval(function () {
+			self.panCameraToRandomPoint(15 * 1000);
 		}, 5000);
+	},
+
+	connectAndStartGame: function () {
+		var nameInputArea = document.getElementById('inputName');
+		
+		var name;
+		nameInputArea.value ? name = nameInputArea.value : name = "Player";
+		
+		ige.network.send('playerEntity', name);
+		document.getElementById('nameArea').style.display = 'none';
+		ige.client.panController.cancel();
+	},
+
+	panCameraToRandomPoint: function (easing) {
+		if (!easing) easing = 0;
+		var lowerBound = 500;
+		var upperBound = 4000;
+
+		var x = getRandomInt(lowerBound, upperBound);
+		var y = getRandomInt(lowerBound, upperBound);
+		
+		ige.client.vp1.camera.panTo( new IgePoint3d(x, y, 0), easing);
 	}
 });
 

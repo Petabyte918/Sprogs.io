@@ -25,10 +25,10 @@ var ServerNetworkEvents = {
 
 	_onPlayerEntity: function (data, clientId) {
 		if (!ige.server.players[clientId]) {
-			ige.server.addPlayerToList(clientId);
+			ige.server.addPlayerToList(data, clientId);
 
 			// Tell the client to track their player entity
-			ige.network.send('playerEntity', ige.server.players[clientId].id(), clientId);
+			ige.network.send('playerEntity', {id: ige.server.players[clientId].id(), username: data}, clientId);
 		}
 	},
 

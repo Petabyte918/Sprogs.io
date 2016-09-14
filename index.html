@@ -9,6 +9,22 @@
 	<meta http-equiv="X-UA-Compatible" content="IE=9" >
 	<title>Grab Thee Booty!!</title>
 
+    <style type="text/css">
+        .login {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 45%;
+        }
+        button {
+            position: relative;
+            left: 25%;
+            width: 50%;
+        }
+    </style>
+
+    <link href="./node_modules/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+
 	<!-- Isogenic Loader -->
 	<script type="text/javascript">var igeRoot = '../ige/engine/';</script>
 	<script type="text/javascript" src="../ige/engine/loader.js"></script>
@@ -22,5 +38,11 @@
             <div id="loadingProgressBar"></div>
         </div>
     </div>
+
+    <div class="login" id="nameArea">
+        <input id="inputName" placeholder="Please enter your name..." maxlength="7" autofocus/> <br>
+        <button id="sendName" onclick="ige.client.connectAndStartGame()">Enter</button>
+    </div>
+
 </body>
 </html>
