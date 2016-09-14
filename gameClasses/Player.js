@@ -5,11 +5,10 @@ var Player = IgeEntityBox2d.extend({
 		IgeEntityBox2d.prototype.init.call(this);
 		this.category("Player");
 
-		var self = this;
-
 		this.drawBounds(false);
 
 		this._score = 0;
+		this._health = 100;
 		this._thrustVelocity = 0;
 		this._mouseAngleFromPlayer = 0;
 
@@ -29,7 +28,7 @@ var Player = IgeEntityBox2d.extend({
 			if(ige.box2d) {
 				// ige.box2d.networkDebugMode(true); // adds additional console output for the debugger
 
-				var fixDefs = self.setUpCollider(spriteScale);
+				var fixDefs = this.setUpCollider(spriteScale);
 				fixDefs.push({
 					density: 0.5,
 					friction: 0,
@@ -68,37 +67,19 @@ var Player = IgeEntityBox2d.extend({
 			};
 
 			this.switches = {
-				thrustEmitterStarted: false
+				thrustEmitterStarted: false,
+				explosionEmitterStarted: false
 			};
 
 			this.texture(ige.client.textures.ship)
 			.width(32 * spriteScale)
 			.height(32 * spriteScale);
 
-			// Add a particle emitter for the thrust particles
-			// TODO: Add different quantities and velocities based on player velocity
-			this.thrustEmitter = new IgeParticleEmitter()
-			// Set the particle entity to generate for each particle
-				.particle(ThrustParticle)
-				// Set particle life to 300ms
-				.lifeBase(300)
-				// Set output to 60 particles a second (1000ms)
-				.quantityBase(20)
-				.quantityTimespan(1000)
-				// Set the particle's death opacity to zero so it fades out as it's lifespan runs out
-				.deathOpacityBase(0)
-				// Set velocity vector to y = 0.05, with variance values
-				.velocityVector(new IgePoint3d(0, 0.05, 0), new IgePoint3d(-0.16, 0.03, 0), new IgePoint3d(0.16, 0.15, 0))
-				// Mount new particles to the object scene
-				.particleMountTarget(ige.client.mainScene)
-				// Move the particle emitter to the bottom of the ship
-				.translateTo(0, 0, 0)
-				// Mount the emitter to the ship
-				.mount(this);
+			this.createEmitters();
 		}
 
 		// Define the data sections that will be included in the stream
-		this.streamSections(['transform', 'score', 'thrustVelocity']);
+		this.streamSections(['transform', 'score', 'thrustVelocity', 'health']);
 	},
 
 	/**
@@ -124,6 +105,19 @@ var Player = IgeEntityBox2d.extend({
 			} else {
 				// Return current data
 				return this._score;
+			}
+		}
+
+		if (sectionId === 'health') {
+			// Check if the server sent us data, if not we are supposed
+			// to return the data instead of set it
+			if (data) {
+				// We have been given new data!
+				this._health = data;
+				return;
+			} else {
+				// Return current data
+				return this._health;
 			}
 		}
 
@@ -153,6 +147,7 @@ var Player = IgeEntityBox2d.extend({
 	tick: function (ctx) {
 		/* CEXCLUDE */
 		if (ige.isServer) {
+			this.checkForDeath();
 			this.handleControls();
 		}
 		/* CEXCLUDE */
@@ -233,7 +228,6 @@ var Player = IgeEntityBox2d.extend({
 	handleInput: function () {
 		if (ige.input.actionState('fire')) {
 			if (!this.controls.fire) {
-				console.log("Pls");
 				// Record the new state
 				this.controls.fire = true;
 
@@ -243,11 +237,6 @@ var Player = IgeEntityBox2d.extend({
 				var dx = mousePos.x - myPos.x;
 				var dy = mousePos.y - myPos.y;
 				var rot = Math.atan2(dy, dx);
-
-				// this._mouseAngleFromPlayer = rot;
-
-				// console.log(rot * 180/Math.PI);
-				// console.log("whut");
 
 				ige.network.send('playerControlFireDown', rot);
 			}
@@ -281,6 +270,7 @@ var Player = IgeEntityBox2d.extend({
 
 		if (ige.input.actionState('right')) {
 			if (!this.controls.right) {
+
 				// Record the new state
 				this.controls.right = true;
 
@@ -356,16 +346,6 @@ var Player = IgeEntityBox2d.extend({
 		return fixDefs;
 	},
 
-	handleEmitters: function () {
-		if (this._thrustVelocity > 1 && !this.switches.thrustEmitterStarted) {
-			this.thrustEmitter.start();
-			this.switches.thrustEmitterStarted = true;
-		} else if (this._thrustVelocity < 0.75 && this.switches.thrustEmitterStarted){
-			this.thrustEmitter.stop();
-			this.switches.thrustEmitterStarted = false;
-		}
-	},
-
 	hurt: function (damage) {
 		if (ige.isServer) {
 			this.serverProperties.health -= damage;
@@ -388,8 +368,82 @@ var Player = IgeEntityBox2d.extend({
 		}, 2500);
 	},
 
+	checkForDeath: function () {
+		if (this.serverProperties.isDead) {
+			for (var control in this.controls) {
+				this.controls[control] = false;
+			}
+		}
+
+		// Keep the client updated about health
+		if (this.serverProperties.health != this._health) {
+			this._health = this.serverProperties.health;
+		}
+	},
+
 	isMyPlayer: function () {
 		return ige.client._myPlayerId == this.id();
+	},
+
+	handleEmitters: function () {
+		if (this._thrustVelocity > 1 && !this.switches.thrustEmitterStarted) {
+			this.thrustEmitter.start();
+			this.switches.thrustEmitterStarted = true;
+		} else if (this._thrustVelocity < 0.75 && this.switches.thrustEmitterStarted){
+			this.thrustEmitter.stop();
+			this.switches.thrustEmitterStarted = false;
+		}
+
+		if (this._health <= 0  && !this.switches.explosionEmitter) {
+			this.explosionEmitter.start();
+			this.switches.explosionEmitter = true;
+		} else if (this._health > 0 && this.switches.explosionEmitter){
+			this.explosionEmitter.stop();
+			this.switches.explosionEmitter = false;
+		}
+	},
+
+	createEmitters: function () {
+		// Add a particle emitter for the thrust particles
+		// TODO: Add different quantities and velocities based on player velocity
+		this.thrustEmitter = new IgeParticleEmitter()
+		// Set the particle entity to generate for each particle
+			.particle(ThrustParticle)
+			// Set particle life to 300ms
+			.lifeBase(300)
+			// Set output to 60 particles a second (1000ms)
+			.quantityBase(20)
+			.quantityTimespan(1000)
+			// Set the particle's death opacity to zero so it fades out as it's lifespan runs out
+			.deathOpacityBase(0)
+			// Set velocity vector to y = 0.05, with variance values
+			.velocityVector(new IgePoint3d(0, 0.05, 0), new IgePoint3d(-0.16, 0.03, 0), new IgePoint3d(0.16, 0.15, 0))
+			// Mount new particles to the object scene
+			.particleMountTarget(ige.client.mainScene)
+			// Move the particle emitter to the bottom of the ship
+			.translateTo(0, 0, 0)
+			// Mount the emitter to the ship
+			.mount(this);
+
+		// Add a particle emitter for the thrust particles
+		// TODO: Add different quantities and velocities based on player velocity
+		this.explosionEmitter = new IgeParticleEmitter()
+		// Set the particle entity to generate for each particle
+			.particle(ExplosionParticle)
+			// Set particle life to 300ms
+			.lifeBase(120)
+			// Set output to 60 particles a second (1000ms)
+			.quantityBase(50)
+			// .quantityTimespan(500)
+			// Set the particle's death opacity to zero so it fades out as it's lifespan runs out
+			.deathOpacityBase(0)
+			// Set velocity vector to y = 0.05, with variance values
+			.velocityVector(new IgePoint3d(0, 0, 0), new IgePoint3d(-0.3, 0.2, 0), new IgePoint3d(0.3, -0.1, 0))
+			// Mount new particles to the object scene
+			.particleMountTarget(ige.client.mainScene)
+			.translateTo(0, 0, 0)
+			// Mount the emitter to the ship
+			.mount(this);
 	}
 });
 

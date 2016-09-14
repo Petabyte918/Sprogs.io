@@ -4,13 +4,11 @@ var Projectile = IgeEntityBox2d.extend({
     init: function(id, mouseAngleFromPlayer) {
         IgeEntityBox2d.prototype.init.call(this);
         this.category("Projectile");
-
-        var self = this;
         
         if (ige.isServer) {
             if(ige.box2d){
                 // Setup the box2d physics properties
-                self.box2dBody({
+                this.box2dBody({
                     type: 'dynamic',
                     linearDamping: 3,
                     angularDamping: 0.5,
@@ -59,8 +57,8 @@ var Projectile = IgeEntityBox2d.extend({
         }
 
         if (ige.isClient) {
-            self._textureColor = "#4f585c";
-            self.texture(ige.client.textures.orb)
+            this._textureColor = "#4f585c";
+            this.texture(ige.client.textures.orb)
                 .width(5)
                 .height(5)
         }
