@@ -467,11 +467,16 @@ var Player = IgeEntityBox2d.extend({
 			// Overwrite the tick function to track my player
 			this.nameTag.tick = function (ctx) {
 				var myPlayerPos = myPlayer.worldPosition();
-				var offset = -40;
-				this.translateTo(myPlayerPos.x, myPlayerPos.y + offset, 0);
 
-				// Call the IgeUiLabel (super-class) tick() method
-				IgeUiLabel.prototype.tick.call(this, ctx);
+				if (myPlayer._alive) {
+					var offset = -40;
+					this.translateTo(myPlayerPos.x, myPlayerPos.y + offset, 0);
+
+					// Call the IgeUiLabel (super-class) tick() method
+					IgeUiLabel.prototype.tick.call(this, ctx);
+				} else {
+					this.destroy()
+				}
 			}
 		} else if (this.nameTag) {
 			if (this.nameTag.value != this._playerUsername) {
