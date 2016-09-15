@@ -251,8 +251,7 @@ var Player = IgeEntityBox2d.extend({
 
 				var diffRot = (Math.abs(rot-myRot) * 180/Math.PI )% 360;
 
-				console.log(diffRot);
-
+				// TODO: always fire a bullet, but reassign to the nearest in bounds
 				var bounds = 50;
 				if (!((diffRot > 90 - bounds && diffRot < 90 + bounds) ||
 					(diffRot > 270 - bounds && diffRot < 270 + bounds))) {
@@ -469,6 +468,7 @@ var Player = IgeEntityBox2d.extend({
 	handleGraphics: function () {
 		if (this._playerUsername && !this.nameTag) {
 			this.nameTag = new IgeUiLabel()
+					.width(100, false)
 					.value(this._playerUsername)
 					.mount(ige.client.scene1);
 
@@ -479,8 +479,18 @@ var Player = IgeEntityBox2d.extend({
 				var myPlayerPos = myPlayer.worldPosition();
 
 				if (myPlayer._alive) {
-					var offset = -40;
-					this.translateTo(myPlayerPos.x, myPlayerPos.y + offset, 0);
+					var x_offset = 0;
+					var y_offset = -40;
+
+					if (this.value.length == 7) x_offset = 25;
+					if (this.value.length == 6) x_offset = 28;
+					else if (this.value.length == 5) x_offset = 30;
+					else if (this.value.length == 4) x_offset = 32;
+					else if (this.value.length == 3) x_offset = 35;
+					else if (this.value.length == 2) x_offset = 40;
+					else if (this.value.length == 1) x_offset = 40;
+
+					this.translateTo(myPlayerPos.x + x_offset, myPlayerPos.y + y_offset, 0);
 
 					// Call the IgeUiLabel (super-class) tick() method
 					IgeUiLabel.prototype.tick.call(this, ctx);
