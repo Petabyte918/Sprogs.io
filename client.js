@@ -120,7 +120,7 @@ var Client = IgeClass.extend({
 		}, false);
 
 
-		ige.client.vp1.camera.translateTo(2325, 2325, 0);
+		ige.client.vp1.camera.translateTo(2400, 2400, 0);
 
 		self.panCameraToPoint(undefined, undefined, 15 * 1000);
 

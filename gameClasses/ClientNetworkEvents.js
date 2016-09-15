@@ -10,7 +10,7 @@ var ClientNetworkEvents = {
 	_onPlayerEntity: function (data) {
 		ige.client._myPlayerId = data.id;
 		if (ige.$(data.id)) {
-			ige.client.vp1.camera.trackTranslate(ige.$(data.id), 50);
+			ige.client.vp1.camera.trackTranslate(ige.$(data.id), 0);
 			
 		} else {
 			// The client has not yet received the entity via the network

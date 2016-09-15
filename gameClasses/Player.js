@@ -25,8 +25,6 @@ var Player = IgeEntityBox2d.extend({
 
 		if (ige.isServer) {
 			if(ige.box2d) {
-				// ige.box2d.networkDebugMode(true); // adds additional console output for the debugger
-
 				var fixDefs = this.setUpCollider(spriteScale);
 				fixDefs.push({
 					density: 0.5,
@@ -62,7 +60,13 @@ var Player = IgeEntityBox2d.extend({
 		if (ige.isClient) {
 			this.switches = {
 				thrustEmitterStarted: false,
-				explosionEmitterStarted: false
+				explosionEmitterStarted: false,
+				screenShake: false
+			};
+
+			this.screenShake = {
+				min: 0,
+				max: 0
 			};
 
 			this.texture(ige.client.textures.ship)
@@ -103,27 +107,19 @@ var Player = IgeEntityBox2d.extend({
 		}
 
 		if (sectionId === 'health') {
-			// Check if the server sent us data, if not we are supposed
-			// to return the data instead of set it
 			if (data) {
-				// We have been given new data!
 				this._health = data;
 				return;
 			} else {
-				// Return current data
 				return this._health;
 			}
 		}
 
 		if (sectionId === 'playerUsername') {
-			// Check if the server sent us data, if not we are supposed
-			// to return the data instead of set it
 			if (data) {
-				// We have been given new data!
 				this._playerUsername = data;
 				return;
 			} else {
-				// Return current data
 				return this._playerUsername;
 			}
 		}
@@ -254,6 +250,7 @@ var Player = IgeEntityBox2d.extend({
 				if (!((diffRot > 90 - bounds && diffRot < 90 + bounds) ||
 					(diffRot > 270 - bounds && diffRot < 270 + bounds))) {
 					ige.network.send('playerControlFireDown', rot);
+					this.setScreenShake();
 				}
 
 			}
@@ -376,6 +373,7 @@ var Player = IgeEntityBox2d.extend({
 	respawn: function () {
 		this.serverProperties.isDead = true;
 
+		// Get a new random spawnpoint
 		var spawnpoint = ige.server.getPlayerSpawnPoint();
 
 		var self = this;
@@ -415,6 +413,7 @@ var Player = IgeEntityBox2d.extend({
 
 		if (this._health <= 0  && !this.switches.explosionEmitter) {
 			this.explosionEmitter.start();
+			this.setScreenShake(-1,1,2500);
 			this.switches.explosionEmitter = true;
 		} else if (this._health > 0 && this.switches.explosionEmitter){
 			this.explosionEmitter.stop();
@@ -444,28 +443,19 @@ var Player = IgeEntityBox2d.extend({
 			// Mount the emitter to the ship
 			.mount(this);
 
-		// Add a particle emitter for the thrust particles
-		// TODO: Add different quantities and velocities based on player velocity
 		this.explosionEmitter = new IgeParticleEmitter()
-		// Set the particle entity to generate for each particle
 			.particle(ExplosionParticle)
-			// Set particle life to 300ms
 			.lifeBase(120)
-			// Set output to 60 particles a second (1000ms)
 			.quantityBase(50)
-			// .quantityTimespan(500)
-			// Set the particle's death opacity to zero so it fades out as it's lifespan runs out
 			.deathOpacityBase(0)
-			// Set velocity vector to y = 0.05, with variance values
 			.velocityVector(new IgePoint3d(0, 0, 0), new IgePoint3d(-0.3, 0.2, 0), new IgePoint3d(0.3, -0.1, 0))
-			// Mount new particles to the object scene
 			.particleMountTarget(ige.client.mainScene)
 			.translateTo(0, 0, 0)
-			// Mount the emitter to the ship
 			.mount(this);
 	},
 
 	handleGraphics: function () {
+		// Attach the user's name label
 		if (this._playerUsername && !this.nameTag) {
 			this.nameTag = new IgeUiLabel()
 					.width(100, false)
@@ -503,11 +493,50 @@ var Player = IgeEntityBox2d.extend({
 				this.nameTag.value = this._playerUsername;
 			}
 		}
+
+		// Shake the screen
+		if (this.switches.screenShake) {
+			var min = this.screenShake.min;
+			var max = this.screenShake.max;
+			var x = Math.floor(Math.random()*(max-min+1)+min);
+			var y = Math.floor(Math.random()*(max-min+1)+min);
+
+			x += this.worldPosition().x;
+			y += this.worldPosition().y;
+
+			ige.client.vp1.camera.translateTo(x, y, 0);
+		}
 	},
 
 	setPlayerUsername: function (pun) {
 		this._playerUsername = pun;
 		return this;
+	},
+
+	setScreenShake: function (min, max, duration) {
+		if (this.isMyPlayer()) {
+			if (min == undefined) min = -4;
+			if (max == undefined) max = 4;
+			if (duration == undefined)duration = 125;
+
+			// Set the globals to be used in handleGraphics()
+			this.screenShake.min = min;
+			this.screenShake.max = max;
+			this.switches.screenShake = true;
+
+			// Stop tracking our player
+			ige.client.vp1.camera.unTrackTranslate();
+
+			var self = this;
+			// In *duration* milliseconds: stop the screen screenShake,
+			// track our player and cancel the interval
+			new IgeInterval(function () {
+				self.switches.screenShake = false;
+				ige.client.vp1.camera.trackTranslate(self, 0);
+				
+				this.cancel();
+			}, duration);
+		}
 	}
 });
 
