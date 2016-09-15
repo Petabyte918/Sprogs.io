@@ -483,7 +483,7 @@ var Player = IgeEntityBox2d.extend({
 					var y_offset = -40;
 
 					if (this.value.length == 7) x_offset = 25;
-					if (this.value.length == 6) x_offset = 28;
+					else if (this.value.length == 6) x_offset = 28;
 					else if (this.value.length == 5) x_offset = 30;
 					else if (this.value.length == 4) x_offset = 32;
 					else if (this.value.length == 3) x_offset = 35;

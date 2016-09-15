@@ -115,7 +115,7 @@ var Client = IgeClass.extend({
 		// give a key for the button
 		window.addEventListener("keyup", function (e) {
 			if (e.keyCode == "13" && !ige.client._myPlayerId) {
-				document.getElementById('sendName').click();
+				document.getElementById('enterBtn').click();
 			}
 		}, false);
 
