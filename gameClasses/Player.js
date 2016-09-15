@@ -247,8 +247,18 @@ var Player = IgeEntityBox2d.extend({
 				var dx = mousePos.x - myPos.x;
 				var dy = mousePos.y - myPos.y;
 				var rot = Math.atan2(dy, dx);
+				var myRot = this._rotate.z;
 
-				ige.network.send('playerControlFireDown', rot);
+				var diffRot = (Math.abs(rot-myRot) * 180/Math.PI )% 360;
+
+				console.log(diffRot);
+
+				var bounds = 50;
+				if (!((diffRot > 90 - bounds && diffRot < 90 + bounds) ||
+					(diffRot > 270 - bounds && diffRot < 270 + bounds))) {
+					ige.network.send('playerControlFireDown', rot);
+				}
+
 			}
 		} else {
 			if (this.controls.fire) {

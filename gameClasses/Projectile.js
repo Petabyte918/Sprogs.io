@@ -31,7 +31,7 @@ var Projectile = IgeEntityBox2d.extend({
                 var serverProperties = {
                     damage: 34,
                     velocity: 40,
-                    distanceFromPlayer: 40
+                    distanceFromPlayer: 20
                 };
 
                 this.serverProperties = serverProperties;
