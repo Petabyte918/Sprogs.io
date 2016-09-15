@@ -24,8 +24,6 @@ var Player = IgeEntityBox2d.extend({
 		var spriteScale = 2;		// the texture and collider scale
 
 		if (ige.isServer) {
-			this.translateTo(2325, 2325, 0);
-
 			if(ige.box2d) {
 				// ige.box2d.networkDebugMode(true); // adds additional console output for the debugger
 
@@ -378,9 +376,11 @@ var Player = IgeEntityBox2d.extend({
 	respawn: function () {
 		this.serverProperties.isDead = true;
 
+		var spawnpoint = ige.server.getPlayerSpawnPoint();
+
 		var self = this;
 		new IgeTimeout(function () {
-			self.translateTo(2325, 2325, 0);
+			self.translateTo(spawnpoint.x, spawnpoint.y, spawnpoint.z);
 			self.rotateTo(0,0,0);
 			self.serverProperties.health = 100;
 			self.serverProperties.isDead = false;

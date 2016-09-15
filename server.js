@@ -74,34 +74,11 @@ var Server = IgeClass.extend({
 						// Textures are handled by the client
 						ige.addComponent(IgeTiledComponent)
 							.tiled.loadJson(Green_Islands_75x75, function (layerArray, layersById) {
-
-							//EXPERIMENT
-							var i, destTileX = - 1, destTileY = -1,
-								tileChecker = function (tileData, tileX, tileY) {
-									// If the map tile data is set, don't path along it
-									return !tileData;
-								};
-
-							for (i = 0; i < 300; i++) {
-								while (destTileX < 0 || destTileY < 0 || !layersById.collisions.map._mapData[destTileY] || !tileChecker(layersById.collisions.map._mapData[destTileY][destTileX]) ||
-									!layersById.islands.map._mapData[destTileY] || !tileChecker(layersById.islands.map._mapData[destTileY][destTileX])) {
-
-									destTileX = Math.random() * 75 | 0; // | rounds to int
-									destTileY = Math.random() * 75 | 0;
-								}
-								// console.log(destTileX, destTileY);
-
-								new Box()
-									.translateTo(destTileX * 64, destTileY * 64, 0)
-									.streamMode(1)
-									.mount(self.scene1);
-
-								destTileX = -1;
-								destTileY = -1;
-							}
-
-							console.log(layersById.collisions.map._mapData.length);
-							//EXPERIMENT
+							
+							self._myMapDataFromId = {};
+							self._myMapDataFromId['collisions'] = layersById.collisions.map._mapData;
+							self._myMapDataFromId['islands'] = layersById.islands.map._mapData;
+							self._myMapDataFromId['background'] = layersById.background.map._mapData;
 
 							// Create collision boxes from the layers in the map
 							ige.box2d.staticsFromMap(layersById.collisions);
@@ -113,13 +90,14 @@ var Server = IgeClass.extend({
 	},
 
 	addPlayerToList: function (username, clientId) {
+		var spawnPoint = this.getPlayerSpawnPoint();
+
 		ige.server.players[clientId] = new Player(clientId)
 			.drawBounds(false)
+			.translateTo(spawnPoint.x, spawnPoint.y, spawnPoint.z)
 			.setPlayerUsername(username)
 			.streamMode(1)
 			.mount(ige.server.scene1);
-
-		// ige.server.players[clientId]._playerUsername = username;
 
 		var count = this.getOnlineUsers();
 
@@ -145,6 +123,25 @@ var Server = IgeClass.extend({
 		}
 
 		return count;
+	},
+
+	getPlayerSpawnPoint: function () {
+		var destTileX = - 1;
+		var destTileY = -1;
+
+		var	tileChecker = function (tileData, tileX, tileY) {
+				// If the map tile data is set, don't path along it
+				return !tileData;
+			};
+
+		while (destTileX < 0 || destTileY < 0 || !this._myMapDataFromId['collisions'][destTileY] || !tileChecker(this._myMapDataFromId['collisions'][destTileY][destTileX]) ||
+			!this._myMapDataFromId['islands'][destTileY] || !tileChecker(this._myMapDataFromId['islands'][destTileY][destTileX])) {
+
+			destTileX = Math.random() * 75 | 0; // | rounds to int
+			destTileY = Math.random() * 75 | 0;
+		}
+		
+		return new IgePoint3d(destTileX * 64, destTileY * 64, 0);
 	}
 });
 
