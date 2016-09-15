@@ -67,7 +67,7 @@ var Server = IgeClass.extend({
 							.id('vp1')
 							.autoSize(true)
 							.scene(self.mainScene)
-							.drawBounds(true)
+							.drawBounds(false)
 							.mount(ige);
 
 						// Load the tilemap's collisions
@@ -75,15 +75,38 @@ var Server = IgeClass.extend({
 						ige.addComponent(IgeTiledComponent)
 							.tiled.loadJson(Green_Islands_75x75, function (layerArray, layersById) {
 
+							//EXPERIMENT
+							var i, destTileX = - 1, destTileY = -1,
+								tileChecker = function (tileData, tileX, tileY) {
+									// If the map tile data is set, don't path along it
+									return !tileData;
+								};
+
+							for (i = 0; i < 300; i++) {
+								while (destTileX < 0 || destTileY < 0 || !layersById.collisions.map._mapData[destTileY] || !tileChecker(layersById.collisions.map._mapData[destTileY][destTileX]) ||
+									!layersById.islands.map._mapData[destTileY] || !tileChecker(layersById.islands.map._mapData[destTileY][destTileX])) {
+
+									destTileX = Math.random() * 75 | 0; // | rounds to int
+									destTileY = Math.random() * 75 | 0;
+								}
+								// console.log(destTileX, destTileY);
+
+								new Box()
+									.translateTo(destTileX * 64, destTileY * 64, 0)
+									.streamMode(1)
+									.mount(self.scene1);
+
+								destTileX = -1;
+								destTileY = -1;
+							}
+
+							console.log(layersById.collisions.map._mapData.length);
+							//EXPERIMENT
+
 							// Create collision boxes from the layers in the map
 							ige.box2d.staticsFromMap(layersById.collisions);
 							ige.box2d.staticsFromMap(layersById.islands);
 						});
-
-						new Box()
-							.translateTo(2220, 2220, 0)
-							.streamMode(1)
-							.mount(self.scene1);
 					}
 				});
 			});
