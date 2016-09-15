@@ -36,16 +36,23 @@ var Projectile = IgeEntityBox2d.extend({
 
                 this.serverProperties = serverProperties;
 
+                var canHurt = true;
+
                 this.on('collisionStart', '.Player', function (contactData) {
                     if (contactData.igeEntityA()._category == "Player") {
-                        contactData.igeEntityA().hurt(serverProperties.damage);
+                        if (canHurt) {
+                            canHurt = false;
+                            contactData.igeEntityA().hurt(serverProperties.damage);
+                        }
 
                         contactData.igeEntityB().destroy();
                     }
 
                     if (contactData.igeEntityB()._category == "Player") {
-                        contactData.igeEntityB().hurt(this.serverProperties.damage);
-
+                        if (canHurt) {
+                            canHurt = false;
+                            contactData.igeEntityB().hurt(this.serverProperties.damage);
+                        }
                         contactData.igeEntityB().destroy();
                     }
 
