@@ -141,7 +141,9 @@ var Server = IgeClass.extend({
 			destTileY = Math.random() * 75 | 0;
 		}
 		
-		return new IgePoint3d(destTileX * 64, destTileY * 64, 0);
+		// TODO: swap this back out when done testing
+		// return new IgePoint3d(destTileX * 64, destTileY * 64, 0);
+		return new IgePoint3d(2400,2400,0)
 	}
 });
 

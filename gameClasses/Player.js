@@ -58,6 +58,24 @@ var Player = IgeEntityBox2d.extend({
 		}
 
 		if (ige.isClient) {
+			this.sounds = {
+				hit: new Howl({
+					src: ['./assets/sounds/hit.wav']
+				}),
+				hit2: new Howl({
+					src: ['./assets/sounds/hit2.wav']
+				}),
+				hit3: new Howl({
+					src: ['./assets/sounds/hit3.wav']
+				}),
+				hurt: new Howl({
+					src: ['./assets/sounds/hurt.wav']
+				}),
+				death: new Howl({
+					src: ['./assets/sounds/death.wav']
+				})
+			};
+
 			this.switches = {
 				thrustEmitterStarted: false,
 				explosionEmitterStarted: false,
@@ -246,11 +264,13 @@ var Player = IgeEntityBox2d.extend({
 				var diffRot = (Math.abs(rot-myRot) * 180/Math.PI )% 360;
 
 				// TODO: always fire a bullet, but reassign to the nearest in bounds
-				var bounds = 50;
+				var bounds = 40;
 				if (!((diffRot > 90 - bounds && diffRot < 90 + bounds) ||
 					(diffRot > 270 - bounds && diffRot < 270 + bounds))) {
 					ige.network.send('playerControlFireDown', rot);
 					this.setScreenShake();
+
+					Math.random() < 0.5 ? this.sounds.hit.play() : this.sounds.hit3.play();
 				}
 
 			}
@@ -413,6 +433,7 @@ var Player = IgeEntityBox2d.extend({
 
 		if (this._health <= 0  && !this.switches.explosionEmitter) {
 			this.explosionEmitter.start();
+			if (this.isMyPlayer()) this.sounds.death.play();
 			this.setScreenShake(-1,1,2500);
 			this.switches.explosionEmitter = true;
 		} else if (this._health > 0 && this.switches.explosionEmitter){
