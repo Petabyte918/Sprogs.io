@@ -14,7 +14,9 @@ var Player = IgeEntityBox2d.extend({
 			username: "Player",
 			health: 100,
 			score: 0,
-			isDead: false
+			isDead: false,
+			timeToHit: 0,
+			fireRate: 500
 		};
 
 		// Used to tell the server when we give input
@@ -25,7 +27,7 @@ var Player = IgeEntityBox2d.extend({
 			fire: false
 		};
 
-		var spriteScale = 2;		// the texture and collider scale
+		var spriteScale = 2;	// the texture and collider scale
 
 		if (ige.isServer) {
 			if(ige.box2d) {
@@ -46,8 +48,6 @@ var Player = IgeEntityBox2d.extend({
 				});
 
 				this.serverProperties = {
-					timeToHit: 0,
-					fireRate: 500,
 					thrustVelocity: 0,          // current velocity
 					maxThrustVelocity: 7,     	// max velocity
 					rotationDivisor: 3.3,		// divisor to calculate rotation velocity
@@ -214,8 +214,8 @@ var Player = IgeEntityBox2d.extend({
 		// Set _thrustVelocity which is streamed to the client
 		if (this.serverProperties != 0) this._thrustVelocity = this.serverProperties.thrustVelocity;
 
-		if (this.controls.fire && this.serverProperties.timeToHit < ige.currentTime()) {
-			this.serverProperties.timeToHit = this.serverProperties.fireRate + ige.currentTime();
+		if (this.controls.fire && this.playerProperties.timeToHit < ige.currentTime()) {
+			this.playerProperties.timeToHit = this.playerProperties.fireRate + ige.currentTime();
 			this.controls.fire = false;
 
 			var myPos = this.worldPosition();
@@ -231,28 +231,31 @@ var Player = IgeEntityBox2d.extend({
 
 		if (ige.input.actionState('fire')) {
 			if (!this.controls.fire) {
-				// TODO: add client side firerate
-				// Record the new state
-				this.controls.fire = true;
+				if (this.playerProperties.timeToHit < ige.currentTime()) {
+					this.playerProperties.timeToHit = this.playerProperties.fireRate + ige.currentTime();
 
-				var mousePos = ige._currentViewport.mousePos();
-				var myPos = this.worldPosition();
+					// Record the new state
+					this.controls.fire = true;
 
-				var dx = mousePos.x - myPos.x;
-				var dy = mousePos.y - myPos.y;
-				var rot = Math.atan2(dy, dx);
-				var myRot = this._rotate.z;
+					var mousePos = ige._currentViewport.mousePos();
+					var myPos = this.worldPosition();
 
-				var diffRot = (Math.abs(rot-myRot) * 180/Math.PI )% 360;
+					var dx = mousePos.x - myPos.x;
+					var dy = mousePos.y - myPos.y;
+					var rot = Math.atan2(dy, dx);
+					var myRot = this._rotate.z;
 
-				// TODO: always fire a bullet, but reassign to the nearest in bounds
-				var bounds = 40;
-				if (!((diffRot > 90 - bounds && diffRot < 90 + bounds) ||
-					(diffRot > 270 - bounds && diffRot < 270 + bounds))) {
-					ige.network.send('playerControlFireDown', rot);
-					this.setScreenShake();
+					var diffRot = (Math.abs(rot - myRot) * 180 / Math.PI ) % 360;
 
-					Math.random() < 0.5 ? this.sounds.hit.play() : this.sounds.hit3.play();
+					// TODO: always fire a bullet, but reassign to the nearest in bounds
+					var bounds = 40;
+					if (!((diffRot > 90 - bounds && diffRot < 90 + bounds) ||
+						(diffRot > 270 - bounds && diffRot < 270 + bounds))) {
+						ige.network.send('playerControlFireDown', rot);
+						this.setScreenShake();
+
+						Math.random() < 0.5 ? this.sounds.hit.play() : this.sounds.hit3.play();
+					}
 				}
 
 			}
