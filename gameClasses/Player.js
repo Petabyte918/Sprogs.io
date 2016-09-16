@@ -62,6 +62,10 @@ var Player = IgeEntityBox2d.extend({
 		if (ige.isClient) {
 			this.playerProperties.username = username;
 
+			this.clientProperties = {
+				prev_position: new IgePoint3d(0,0,0)
+			};
+
 			this.sounds = {
 				hit: new Howl({
 					src: ['./assets/sounds/hit.wav']
@@ -99,7 +103,7 @@ var Player = IgeEntityBox2d.extend({
 		}
 
 		// Define the data sections that will be included in the stream
-		this.streamSections(['transform', 'health']);
+		this.streamSections(['transform', 'health', 'score']);
 	},
 
 	/**
@@ -121,9 +125,27 @@ var Player = IgeEntityBox2d.extend({
 					return;
 				}
 			} else {
-				// data = parseInt(data);
 				if (this.playerProperties.health != data) {
 					this.playerProperties.health = data;
+
+					if(ige.isClient && data < 100) {
+						this.sounds.hurt.play();
+					}
+				}
+
+			}
+		}
+
+		if(sectionId == 'score'){
+			if(!data){
+				if(ige.isServer){
+					return this.playerProperties.score;
+				} else {
+					return;
+				}
+			} else {
+				if (this.playerProperties.score != data) {
+					this.playerProperties.score = data;
 				}
 			}
 		}
@@ -234,19 +256,22 @@ var Player = IgeEntityBox2d.extend({
 				if (this.playerProperties.timeToHit < ige.currentTime()) {
 					this.playerProperties.timeToHit = this.playerProperties.fireRate + ige.currentTime();
 
-					// Record the new state
 					this.controls.fire = true;
 
+					// Record our positions
 					var mousePos = ige._currentViewport.mousePos();
 					var myPos = this.worldPosition();
 
+					// Find the angle to shoot at based of our mousePos and playerPos
 					var dx = mousePos.x - myPos.x;
 					var dy = mousePos.y - myPos.y;
 					var rot = Math.atan2(dy, dx);
 					var myRot = this._rotate.z;
 
+					// Calculate the angles directly in front and in back of our ship
 					var diffRot = (Math.abs(rot - myRot) * 180 / Math.PI ) % 360;
 
+					// Set a range of degrees and prohibit shooting within those bounds
 					// TODO: always fire a bullet, but reassign to the nearest in bounds
 					var bounds = 40;
 					if (!((diffRot > 90 - bounds && diffRot < 90 + bounds) ||
@@ -254,72 +279,50 @@ var Player = IgeEntityBox2d.extend({
 						ige.network.send('playerControlFireDown', rot);
 						this.setScreenShake();
 
+						// Play a random shot sound
 						Math.random() < 0.5 ? this.sounds.hit.play() : this.sounds.hit3.play();
 					}
 				}
-
 			}
 		} else {
 			if (this.controls.fire) {
-				// Record the new state
 				this.controls.fire = false;
-
-				// Tell the server about our control change
 				ige.network.send('playerControlFireUp');
 			}
 		}
 
 		if (ige.input.actionState('left')) {
 			if (!this.controls.left) {
-				// Record the new state
 				this.controls.left = true;
-
-				// Tell the server about our control change
 				ige.network.send('playerControlLeftDown');
 			}
 		} else {
 			if (this.controls.left) {
-				// Record the new state
 				this.controls.left = false;
-
-				// Tell the server about our control change
 				ige.network.send('playerControlLeftUp');
 			}
 		}
 
 		if (ige.input.actionState('right')) {
 			if (!this.controls.right) {
-
-				// Record the new state
 				this.controls.right = true;
-
-				// Tell the server about our control change
 				ige.network.send('playerControlRightDown');
 			}
 		} else {
 			if (this.controls.right) {
-				// Record the new state
 				this.controls.right = false;
-
-				// Tell the server about our control change
 				ige.network.send('playerControlRightUp');
 			}
 		}
 
 		if (ige.input.actionState('thrust')) {
 			if (!this.controls.thrust) {
-				// Record the new state
 				this.controls.thrust = true;
-
-				// Tell the server about our control change
 				ige.network.send('playerControlThrustDown');
 			}
 		} else {
 			if (this.controls.thrust) {
-				// Record the new state
 				this.controls.thrust = false;
-
-				// Tell the server about our control change
 				ige.network.send('playerControlThrustUp');
 			}
 		}
@@ -402,11 +405,12 @@ var Player = IgeEntityBox2d.extend({
 	},
 
 	handleEmitters: function () {
-		// Movement trails
-		if (this._thrustVelocity > 1 && !this.switches.thrustEmitterStarted) {
+		// Display trails based on movement speed. Maybe make it when controls.thrust?
+		var clientVel = this.getPlayerVelocity();
+		if (clientVel > 1.5 && !this.switches.thrustEmitterStarted) {
 			this.thrustEmitter.start();
 			this.switches.thrustEmitterStarted = true;
-		} else if (this._thrustVelocity < 0.75 && this.switches.thrustEmitterStarted){
+		} else if (clientVel < 0.75 && this.switches.thrustEmitterStarted){
 			this.thrustEmitter.stop();
 			this.switches.thrustEmitterStarted = false;
 		}
@@ -539,6 +543,16 @@ var Player = IgeEntityBox2d.extend({
 				this.cancel();
 			}, duration);
 		}
+	},
+
+	// Returns the player's velocity in units/tick
+	getPlayerVelocity: function () {
+		var deltaX = this.worldPosition().x - this.clientProperties.prev_position.x;
+		var deltaY = this.worldPosition().y - this.clientProperties.prev_position.y;
+		var vel = Math.sqrt((deltaX * deltaX) + (deltaY * deltaY));
+
+		this.clientProperties.prev_position = this.worldPosition();
+		return vel;
 	}
 });
 
