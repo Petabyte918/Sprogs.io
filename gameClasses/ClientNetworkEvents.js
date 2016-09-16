@@ -23,7 +23,7 @@ var ClientNetworkEvents = {
 					// Tell the camera to track out player entity
 					var player = ige.$(data.id);
 					player.setPlayerUsername(data.username);
-					ige.client.vp1.camera.trackTranslate(player, 0);
+					ige.client.vp1.camera.trackTranslate(player, 10);
 				}
 			});
 		}

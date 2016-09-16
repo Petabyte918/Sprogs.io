@@ -68,19 +68,24 @@ var Player = IgeEntityBox2d.extend({
 
 			this.sounds = {
 				hit: new Howl({
-					src: ['./assets/sounds/hit.wav']
+					src: ['./assets/sounds/hit.wav'],
+					volume: 0.35
 				}),
 				hit2: new Howl({
-					src: ['./assets/sounds/hit2.wav']
+					src: ['./assets/sounds/hit2.wav'],
+					volume: 0.35
 				}),
 				hit3: new Howl({
-					src: ['./assets/sounds/hit3.wav']
+					src: ['./assets/sounds/hit3.wav'],
+					volume: 0.35
 				}),
 				hurt: new Howl({
-					src: ['./assets/sounds/hurt.wav']
+					src: ['./assets/sounds/hurt.wav'],
+					volume: 0.35
 				}),
 				death: new Howl({
-					src: ['./assets/sounds/death.wav']
+					src: ['./assets/sounds/death.wav'],
+					volume: 0.2
 				})
 			};
 
@@ -128,7 +133,7 @@ var Player = IgeEntityBox2d.extend({
 				if (this.playerProperties.health != data) {
 					this.playerProperties.health = data;
 
-					if(ige.isClient && data < 100) {
+					if(ige.isClient && data < 100 && this.isMyPlayer()) {
 						this.sounds.hurt.play();
 					}
 				}
@@ -273,11 +278,12 @@ var Player = IgeEntityBox2d.extend({
 
 					// Set a range of degrees and prohibit shooting within those bounds
 					// TODO: always fire a bullet, but reassign to the nearest in bounds
+					// TODO: add server side bounds check
 					var bounds = 40;
 					if (!((diffRot > 90 - bounds && diffRot < 90 + bounds) ||
 						(diffRot > 270 - bounds && diffRot < 270 + bounds))) {
 						ige.network.send('playerControlFireDown', rot);
-						this.setScreenShake();
+						this.setScreenShakeAtAngle((rot - Math.PI) % (2*Math.PI));
 
 						// Play a random shot sound
 						Math.random() < 0.5 ? this.sounds.hit.play() : this.sounds.hit3.play();
@@ -538,8 +544,36 @@ var Player = IgeEntityBox2d.extend({
 			// track our player and cancel the interval
 			new IgeInterval(function () {
 				self.switches.screenShake = false;
-				ige.client.vp1.camera.trackTranslate(self, 0);
+				ige.client.vp1.camera.trackTranslate(self, 10);
 				
+				this.cancel();
+			}, duration);
+		}
+	},
+
+	// Sets a shake at an angle and distance. Used in shooting.
+	setScreenShakeAtAngle: function (angle, distance, duration) {
+		if (this.isMyPlayer()) {
+			if (distance == undefined) distance = 15;
+			if (duration == undefined) duration = 75;
+
+			// Stop tracking our player
+			ige.client.vp1.camera.unTrackTranslate();
+
+			var pos = this.worldPosition();
+			var dx = Math.cos(angle);
+			var dy = Math.sin(angle);
+
+			var tp = new IgePoint3d(dx * distance + pos.x, dy * distance + pos.y, 0);
+			ige.client.vp1.camera.panTo(tp, duration);
+
+			var self = this;
+			// In *duration* milliseconds: return to the normal camera,
+			// track our player and cancel the interval
+			new IgeInterval(function () {
+				ige.client.vp1.camera._translate.tween().stopAll();
+				ige.client.vp1.camera.trackTranslate(self, 5);
+
 				this.cancel();
 			}, duration);
 		}
