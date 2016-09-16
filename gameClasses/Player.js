@@ -1,17 +1,20 @@
 var Player = IgeEntityBox2d.extend({
 	classId: 'Player',
 
-	init: function () {
+	init: function (username) {
 		IgeEntityBox2d.prototype.init.call(this);
 		this.category("Player");
 
 		this.drawBounds(false);
 
 		this._score = 0;
-		this._health = 100;
 		this._thrustVelocity = 0;
 		this._mouseAngleFromPlayer = 0;
-		this._playerUsername;
+
+		this.playerProperties = {
+			username: "Player",
+			health: 100
+		};
 
 		// Used to tell the server when we give input
 		this.controls = {
@@ -45,7 +48,7 @@ var Player = IgeEntityBox2d.extend({
 					timeToHit: 0,
 					fireRate: 500,
 					isDead: false,
-					health: 100,
+					// health: 100,
 					thrustVelocity: 0,          // current velocity
 					maxThrustVelocity: 7,     	// max velocity
 					rotationDivisor: 3.3,		// divisor to calculate rotation velocity
@@ -58,6 +61,9 @@ var Player = IgeEntityBox2d.extend({
 		}
 
 		if (ige.isClient) {
+			this.playerProperties.username = username;
+			console.log(this.playerProperties.username);
+
 			this.sounds = {
 				hit: new Howl({
 					src: ['./assets/sounds/hit.wav']
@@ -95,7 +101,7 @@ var Player = IgeEntityBox2d.extend({
 		}
 
 		// Define the data sections that will be included in the stream
-		this.streamSections(['transform', 'score', 'thrustVelocity', 'health', 'playerUsername']);
+		this.streamSections(['transform', 'score', 'thrustVelocity', 'health']);
 	},
 
 	/**
@@ -109,55 +115,49 @@ var Player = IgeEntityBox2d.extend({
 	 * @return {*}
 	 */
 	streamSectionData: function (sectionId, data) {
-		// Check if the section is one that we are handling
-		if (sectionId === 'score') {
-			// Check if the server sent us data, if not we are supposed
-			// to return the data instead of set it
-			// TODO: find a better way to stream data. Constantly sends and sets _score and _thrustVelocity whenever either changes
-			if (data) {
-				// We have been given new data!
-				this._score = data;
-				return;
+		if(sectionId == 'health'){
+			if(!data){
+				if(ige.isServer){
+					// If we're on the server and no data is given the server requests
+					// data. We will grant this request.
+					// With the new stream system this value is streamed ONLY if
+					// it differs from the previously streamed value! If you do not
+					// want that, call this.setStreamSectionComparison('runDirection', false);
+					// and it will be streamed all the time.
+					// Instead of "false" you can also add a function to compare the old and
+					// new values yourself!
+					return this.playerProperties.health;
+				} else {
+					return;
+				}
 			} else {
-				// Return current data
-				return this._score;
+				// since the data comes from JSON it's a string as of yet.
+				data = parseInt(data);
+				// now set the client's runDirection state to the one from the server.
+				this.playerProperties.health = data;
 			}
 		}
 
-		if (sectionId === 'health') {
-			if (data) {
-				this._health = data;
-				return;
-			} else {
-				return this._health;
-			}
-		}
-
-		if (sectionId === 'playerUsername') {
-			if (data) {
-				this._playerUsername = data;
-				return;
-			} else {
-				return this._playerUsername;
-			}
-		}
-
-		if (sectionId === 'thrustVelocity') {
-			// Check if the server sent us data, if not we are supposed
-			// to return the data instead of set it
-			if (data) {
-				// We have been given new data!
-				this._thrustVelocity = data;
-				return;
-			} else {
-				// Return current data
-				return this._thrustVelocity;
-			}
-		}
+		// if (sectionId === 'thrustVelocity') {
+		// 	// Check if the server sent us data, if not we are supposed
+		// 	// to return the data instead of set it
+		// 	if (data) {
+		// 		// We have been given new data!
+		// 		this._thrustVelocity = data;
+		// 		return;
+		// 	} else {
+		// 		// Return current data
+		// 		return this._thrustVelocity;
+		// 	}
+		// }
 		// The section was not one that we handle here, so pass this
 		// to the super-class streamSectionData() method - it handles
 		// the "transform" section by itself
 		return IgeEntity.prototype.streamSectionData.call(this, sectionId, data);
+	},
+	// Called when a player is first created on a client through the stream.
+	streamCreateData: function() {
+		return this.playerProperties.username;
 	},
 
 	/**
@@ -382,9 +382,9 @@ var Player = IgeEntityBox2d.extend({
 
 	hurt: function (damage) {
 		if (ige.isServer) {
-			this.serverProperties.health -= damage;
+			this.playerProperties.health -= damage;
 
-			if (this.serverProperties.health <= 0 && !this.serverProperties.isDead) {
+			if (this.playerProperties.health <= 0 && !this.serverProperties.isDead) {
 				this.respawn();
 			}
 		}
@@ -400,7 +400,7 @@ var Player = IgeEntityBox2d.extend({
 		new IgeTimeout(function () {
 			self.translateTo(spawnpoint.x, spawnpoint.y, spawnpoint.z);
 			self.rotateTo(0,0,0);
-			self.serverProperties.health = 100;
+			self.playerProperties.health = 100;
 			self.serverProperties.isDead = false;
 		}, 2500);
 	},
@@ -413,9 +413,9 @@ var Player = IgeEntityBox2d.extend({
 		}
 
 		// Keep the client updated about health
-		if (this.serverProperties.health != this._health) {
-			this._health = this.serverProperties.health;
-		}
+		// if (this.serverProperties.health != this._health) {
+		// 	this._health = this.serverProperties.health;
+		// }
 	},
 
 	isMyPlayer: function () {
@@ -431,12 +431,12 @@ var Player = IgeEntityBox2d.extend({
 			this.switches.thrustEmitterStarted = false;
 		}
 
-		if (this._health <= 0  && !this.switches.explosionEmitter) {
+		if (this.playerProperties.health <= 0  && !this.switches.explosionEmitter) {
 			this.explosionEmitter.start();
 			if (this.isMyPlayer()) this.sounds.death.play();
 			this.setScreenShake(-1,1,2500);
 			this.switches.explosionEmitter = true;
-		} else if (this._health > 0 && this.switches.explosionEmitter){
+		} else if (this.playerProperties.health > 0 && this.switches.explosionEmitter){
 			this.explosionEmitter.stop();
 			this.switches.explosionEmitter = false;
 		}
@@ -477,11 +477,11 @@ var Player = IgeEntityBox2d.extend({
 
 	handleGraphics: function () {
 		// Attach the user's name label
-		if (this._playerUsername && !this.nameTag) {
+		if (!this.nameTag) {
 			this.nameTag = new IgeUiLabel()
-					.width(100, false)
-					.value(this._playerUsername)
-					.mount(ige.client.scene1);
+				.width(100, false)
+				.value(this.playerProperties.username)
+				.mount(ige.client.scene1);
 
 			var myPlayer = this;
 
@@ -510,8 +510,8 @@ var Player = IgeEntityBox2d.extend({
 				}
 			}
 		} else if (this.nameTag) {
-			if (this.nameTag.value != this._playerUsername) {
-				this.nameTag.value = this._playerUsername;
+			if (this.nameTag.value != this.playerProperties.username) {
+				this.nameTag.value = this.playerProperties.username;
 			}
 		}
 
@@ -530,7 +530,7 @@ var Player = IgeEntityBox2d.extend({
 	},
 
 	setPlayerUsername: function (pun) {
-		this._playerUsername = pun;
+		this.playerProperties.username = pun;
 		return this;
 	},
 

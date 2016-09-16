@@ -101,12 +101,12 @@ var Server = IgeClass.extend({
 
 		var count = this.getOnlineUsers();
 
-		console.log(ige.server.players[clientId]._playerUsername + " has joined the server");
+		console.log(ige.server.players[clientId].playerProperties.username + " has joined the server");
 		console.log(count + " user(s) online");
 	},
 
 	removePlayerFromList: function (clientId) {
-		var username = ige.server.players[clientId]._playerUsername;
+		var username = ige.server.players[clientId].playerProperties.username;
 		delete ige.server.players[clientId];
 		
 		var count = this.getOnlineUsers();
