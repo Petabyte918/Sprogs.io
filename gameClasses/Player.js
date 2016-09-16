@@ -66,6 +66,8 @@ var Player = IgeEntityBox2d.extend({
 				prev_position: new IgePoint3d(0,0,0)
 			};
 
+			// TODO: play sounds on remote clients
+			// TODO: set volume dependant on distance
 			this.sounds = {
 				hit: new Howl({
 					src: ['./assets/sounds/hit.wav'],
@@ -242,14 +244,16 @@ var Player = IgeEntityBox2d.extend({
 		if (this.serverProperties != 0) this._thrustVelocity = this.serverProperties.thrustVelocity;
 
 		if (this.controls.fire && this.playerProperties.timeToHit < ige.currentTime()) {
-			this.playerProperties.timeToHit = this.playerProperties.fireRate + ige.currentTime();
-			this.controls.fire = false;
+			// Calculate the angles directly in front and in back of our ship
+			if (this.isInFireBounds(this._rotate.z, this._mouseAngleFromPlayer)) {
+				this.playerProperties.timeToHit = this.playerProperties.fireRate + ige.currentTime();
+				this.controls.fire = false;
 
-			var myPos = this.worldPosition();
-
-			new Projectile()
-				.mount(ige.server.scene1)
-				.shoot(myPos, this._mouseAngleFromPlayer);
+				var myPos = this.worldPosition();
+				new Projectile()
+					.mount(ige.server.scene1)
+					.shoot(myPos, this._mouseAngleFromPlayer);
+			}
 		}
 	},
 
@@ -259,8 +263,6 @@ var Player = IgeEntityBox2d.extend({
 		if (ige.input.actionState('fire')) {
 			if (!this.controls.fire) {
 				if (this.playerProperties.timeToHit < ige.currentTime()) {
-					this.playerProperties.timeToHit = this.playerProperties.fireRate + ige.currentTime();
-
 					this.controls.fire = true;
 
 					// Record our positions
@@ -270,20 +272,14 @@ var Player = IgeEntityBox2d.extend({
 					// Find the angle to shoot at based of our mousePos and playerPos
 					var dx = mousePos.x - myPos.x;
 					var dy = mousePos.y - myPos.y;
-					var rot = Math.atan2(dy, dx);
+					var mouseRot = Math.atan2(dy, dx);
 					var myRot = this._rotate.z;
 
-					// Calculate the angles directly in front and in back of our ship
-					var diffRot = (Math.abs(rot - myRot) * 180 / Math.PI ) % 360;
+					if (this.isInFireBounds(myRot, mouseRot)) {
+						this.playerProperties.timeToHit = this.playerProperties.fireRate + ige.currentTime();
 
-					// Set a range of degrees and prohibit shooting within those bounds
-					// TODO: always fire a bullet, but reassign to the nearest in bounds
-					// TODO: add server side bounds check
-					var bounds = 40;
-					if (!((diffRot > 90 - bounds && diffRot < 90 + bounds) ||
-						(diffRot > 270 - bounds && diffRot < 270 + bounds))) {
-						ige.network.send('playerControlFireDown', rot);
-						this.setScreenShakeAtAngle((rot - Math.PI) % (2*Math.PI));
+						ige.network.send('playerControlFireDown', mouseRot);
+						this.setScreenShakeAtAngle((mouseRot - Math.PI) % (2 * Math.PI));
 
 						// Play a random shot sound
 						Math.random() < 0.5 ? this.sounds.hit.play() : this.sounds.hit3.play();
@@ -587,6 +583,18 @@ var Player = IgeEntityBox2d.extend({
 
 		this.clientProperties.prev_position = this.worldPosition();
 		return vel;
+	},
+
+	// Stops the player from shooting directly in front/behind himself +- bounds degrees
+	// TODO: always fire a bullet, but reassign to the nearest in bounds
+	isInFireBounds: function (myRot, MouseRot, bounds) {
+		var diffRot = (Math.abs(MouseRot - myRot) * 180 / Math.PI ) % 360;
+
+		// Set a range of degrees and prohibit shooting within those bounds
+		if (bounds == undefined) bounds = 40;
+
+		return !((diffRot > 90 - bounds && diffRot < 90 + bounds) ||
+		(diffRot > 270 - bounds && diffRot < 270 + bounds));
 	}
 });
 
