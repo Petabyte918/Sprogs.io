@@ -7,13 +7,14 @@ var Player = IgeEntityBox2d.extend({
 
 		this.drawBounds(false);
 
-		this._score = 0;
 		this._thrustVelocity = 0;
 		this._mouseAngleFromPlayer = 0;
 
 		this.playerProperties = {
 			username: "Player",
-			health: 100
+			health: 100,
+			score: 0,
+			isDead: false
 		};
 
 		// Used to tell the server when we give input
@@ -47,8 +48,6 @@ var Player = IgeEntityBox2d.extend({
 				this.serverProperties = {
 					timeToHit: 0,
 					fireRate: 500,
-					isDead: false,
-					// health: 100,
 					thrustVelocity: 0,          // current velocity
 					maxThrustVelocity: 7,     	// max velocity
 					rotationDivisor: 3.3,		// divisor to calculate rotation velocity
@@ -62,7 +61,6 @@ var Player = IgeEntityBox2d.extend({
 
 		if (ige.isClient) {
 			this.playerProperties.username = username;
-			console.log(this.playerProperties.username);
 
 			this.sounds = {
 				hit: new Howl({
@@ -101,7 +99,7 @@ var Player = IgeEntityBox2d.extend({
 		}
 
 		// Define the data sections that will be included in the stream
-		this.streamSections(['transform', 'score', 'thrustVelocity', 'health']);
+		this.streamSections(['transform', 'health']);
 	},
 
 	/**
@@ -118,43 +116,24 @@ var Player = IgeEntityBox2d.extend({
 		if(sectionId == 'health'){
 			if(!data){
 				if(ige.isServer){
-					// If we're on the server and no data is given the server requests
-					// data. We will grant this request.
-					// With the new stream system this value is streamed ONLY if
-					// it differs from the previously streamed value! If you do not
-					// want that, call this.setStreamSectionComparison('runDirection', false);
-					// and it will be streamed all the time.
-					// Instead of "false" you can also add a function to compare the old and
-					// new values yourself!
 					return this.playerProperties.health;
 				} else {
 					return;
 				}
 			} else {
-				// since the data comes from JSON it's a string as of yet.
-				data = parseInt(data);
-				// now set the client's runDirection state to the one from the server.
-				this.playerProperties.health = data;
+				// data = parseInt(data);
+				if (this.playerProperties.health != data) {
+					this.playerProperties.health = data;
+				}
 			}
 		}
 
-		// if (sectionId === 'thrustVelocity') {
-		// 	// Check if the server sent us data, if not we are supposed
-		// 	// to return the data instead of set it
-		// 	if (data) {
-		// 		// We have been given new data!
-		// 		this._thrustVelocity = data;
-		// 		return;
-		// 	} else {
-		// 		// Return current data
-		// 		return this._thrustVelocity;
-		// 	}
-		// }
 		// The section was not one that we handle here, so pass this
 		// to the super-class streamSectionData() method - it handles
 		// the "transform" section by itself
 		return IgeEntity.prototype.streamSectionData.call(this, sectionId, data);
 	},
+
 	// Called when a player is first created on a client through the stream.
 	streamCreateData: function() {
 		return this.playerProperties.username;
@@ -168,14 +147,15 @@ var Player = IgeEntityBox2d.extend({
 	tick: function (ctx) {
 		/* CEXCLUDE */
 		if (ige.isServer) {
-			this.checkForDeath();
 			this.handleControls();
 		}
 		/* CEXCLUDE */
 
 		if (ige.isClient) {
+			this.checkForDeath();
+
 			if (this.isMyPlayer()) {
-				this.handleInput();
+				this.captureInput();
 			}
 
 			this.handleGraphics();
@@ -187,8 +167,7 @@ var Player = IgeEntityBox2d.extend({
 	},
 
 	handleControls: function () {
-		// Stop movement if we are dead
-		if (this.serverProperties.isDead) {
+		if (this.playerProperties.isDead) {
 			for (var control in this.controls) {
 				this.controls[control] = false;
 			}
@@ -247,9 +226,12 @@ var Player = IgeEntityBox2d.extend({
 		}
 	},
 
-	handleInput: function () {
+	captureInput: function () {
+		if (this.playerProperties.isDead) return;
+
 		if (ige.input.actionState('fire')) {
 			if (!this.controls.fire) {
+				// TODO: add client side firerate
 				// Record the new state
 				this.controls.fire = true;
 
@@ -384,14 +366,14 @@ var Player = IgeEntityBox2d.extend({
 		if (ige.isServer) {
 			this.playerProperties.health -= damage;
 
-			if (this.playerProperties.health <= 0 && !this.serverProperties.isDead) {
+			if (this.playerProperties.health <= 0 && !this.playerProperties.isDead) {
 				this.respawn();
 			}
 		}
 	},
 
 	respawn: function () {
-		this.serverProperties.isDead = true;
+		this.playerProperties.isDead = true;
 
 		// Get a new random spawnpoint
 		var spawnpoint = ige.server.getPlayerSpawnPoint();
@@ -401,21 +383,15 @@ var Player = IgeEntityBox2d.extend({
 			self.translateTo(spawnpoint.x, spawnpoint.y, spawnpoint.z);
 			self.rotateTo(0,0,0);
 			self.playerProperties.health = 100;
-			self.serverProperties.isDead = false;
+			self.playerProperties.isDead = false;
 		}, 2500);
 	},
 
 	checkForDeath: function () {
-		if (this.serverProperties.isDead) {
-			for (var control in this.controls) {
-				this.controls[control] = false;
-			}
-		}
+		this.playerProperties.health <= 0 ?
+			this.playerProperties.isDead = true:
+			this.playerProperties.isDead = false;
 
-		// Keep the client updated about health
-		// if (this.serverProperties.health != this._health) {
-		// 	this._health = this.serverProperties.health;
-		// }
 	},
 
 	isMyPlayer: function () {
@@ -423,6 +399,7 @@ var Player = IgeEntityBox2d.extend({
 	},
 
 	handleEmitters: function () {
+		// Movement trails
 		if (this._thrustVelocity > 1 && !this.switches.thrustEmitterStarted) {
 			this.thrustEmitter.start();
 			this.switches.thrustEmitterStarted = true;
@@ -431,12 +408,13 @@ var Player = IgeEntityBox2d.extend({
 			this.switches.thrustEmitterStarted = false;
 		}
 
-		if (this.playerProperties.health <= 0  && !this.switches.explosionEmitter) {
+		// Death explosion
+		if (this.playerProperties.isDead && !this.switches.explosionEmitter) {
 			this.explosionEmitter.start();
 			if (this.isMyPlayer()) this.sounds.death.play();
 			this.setScreenShake(-1,1,2500);
 			this.switches.explosionEmitter = true;
-		} else if (this.playerProperties.health > 0 && this.switches.explosionEmitter){
+		} else if (!this.playerProperties.isDead && this.switches.explosionEmitter){
 			this.explosionEmitter.stop();
 			this.switches.explosionEmitter = false;
 		}
