@@ -27,7 +27,9 @@ var Box = IgeEntityBox2d.extend({
                         type: 'circle'
                     }
                 }]
-            })
+            });
+
+            this.streamMode(1);
         }
 
         if (ige.isClient) {

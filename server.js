@@ -74,15 +74,27 @@ var Server = IgeClass.extend({
 						// Textures are handled by the client
 						ige.addComponent(IgeTiledComponent)
 							.tiled.loadJson(Green_Islands_75x75, function (layerArray, layersById) {
-							
+
+							// save our layers for later access
 							self._myMapDataFromId = {};
 							self._myMapDataFromId['collisions'] = layersById.collisions.map._mapData;
 							self._myMapDataFromId['islands'] = layersById.islands.map._mapData;
 							self._myMapDataFromId['background'] = layersById.background.map._mapData;
+							self._myMapDataFromId['shoreSpawns'] = layersById.shoreSpawns.map._mapData;
 
+							// TODO: create a handler to always spawn more coins until a given cap
+							for (i = 0; i < 100; i++) {
+								var spawnpoint = self.getShoreSpawnPoint();
+								new Coin()
+									.translateTo(spawnpoint.x, spawnpoint.y, spawnpoint.z)
+									.mount(self.mainScene);
+							}
+							
 							// Create collision boxes from the layers in the map
 							ige.box2d.staticsFromMap(layersById.collisions);
 							ige.box2d.staticsFromMap(layersById.islands);
+							console.log("Server Started																 *");
+							console.log("------------------------------------------------------------------------------");
 						});
 					}
 				});
@@ -95,24 +107,25 @@ var Server = IgeClass.extend({
 		ige.server.players[clientId] = new Player(clientId)
 			.drawBounds(false)
 			.translateTo(spawnPoint.x, spawnPoint.y, spawnPoint.z)
+			.rotateTo(0, 0, Math.random() * 2 * Math.PI)
 			.setPlayerUsername(username)
 			.streamMode(1)
 			.mount(ige.server.scene1);
 
-		var count = this.getOnlineUsers();
+		this.playerCount = this.getOnlineUsers();
 
 		console.log(ige.server.players[clientId].playerProperties.username + " has joined the server");
-		console.log(count + " user(s) online");
+		console.log(this.playerCount + " user(s) online");
 	},
 
 	removePlayerFromList: function (clientId) {
 		var username = ige.server.players[clientId].playerProperties.username;
 		delete ige.server.players[clientId];
-		
-		var count = this.getOnlineUsers();
+
+		this.playerCount = this.getOnlineUsers();
 
 		console.log(username + " has left the server");
-		console.log(count + " user(s) online");
+		console.log(this.playerCount + " user(s) online");
 	},
 
 	getOnlineUsers: function () {
@@ -129,21 +142,45 @@ var Server = IgeClass.extend({
 		var destTileX = - 1;
 		var destTileY = -1;
 
-		var	tileChecker = function (tileData, tileX, tileY) {
-				// If the map tile data is set, don't path along it
-				return !tileData;
-			};
-
-		while (destTileX < 0 || destTileY < 0 || !this._myMapDataFromId['collisions'][destTileY] || !tileChecker(this._myMapDataFromId['collisions'][destTileY][destTileX]) ||
-			!this._myMapDataFromId['islands'][destTileY] || !tileChecker(this._myMapDataFromId['islands'][destTileY][destTileX])) {
+		while (destTileX < 0 || destTileY < 0 || this.dontIncludeMapTilesById('collisions', destTileX, destTileY) ||
+			this.dontIncludeMapTilesById('islands', destTileX, destTileY)){
 
 			destTileX = Math.random() * 75 | 0; // | rounds to int
 			destTileY = Math.random() * 75 | 0;
 		}
 		
 		// TODO: swap this back out when done testing
-		// return new IgePoint3d(destTileX * 64, destTileY * 64, 0);
-		return new IgePoint3d(2400,2400,0)
+		return new IgePoint3d(destTileX * 64 + 0.5 * 64, destTileY * 64 + 0.5 * 64, 0);
+		// return new IgePoint3d(2400,2400,0)
+	},
+
+	getShoreSpawnPoint: function () {
+		var destTileX = - 1;
+		var destTileY = -1;
+
+		while (destTileX < 0 || destTileY < 0 || this.dontIncludeMapTilesById('collisions', destTileX, destTileY) ||
+			this.dontIncludeMapTilesById('islands', destTileX, destTileY) || this.includeMapTilesById('shoreSpawns', destTileX, destTileY)) {
+
+			destTileX = Math.random() * 75 | 0; // | rounds to int
+			destTileY = Math.random() * 75 | 0;
+		}
+
+		return new IgePoint3d(destTileX * 64 + 0.5 * 64, destTileY * 64 + 0.5 * 64, 0);
+	},
+
+	tileChecker: function (tileData, tileX, tileY) {
+		// If the map tile data is set, don't path along it
+		return !tileData;
+	},
+
+	dontIncludeMapTilesById: function (id, destTileX, destTileY) {
+		return !this._myMapDataFromId[id][destTileY]
+			|| !this.tileChecker(this._myMapDataFromId[id][destTileY][destTileX]);
+	},
+
+	includeMapTilesById: function (id, destTileX, destTileY) {
+		return !this._myMapDataFromId[id][destTileY]
+			|| this.tileChecker(this._myMapDataFromId[id][destTileY][destTileX]);
 	}
 });
 

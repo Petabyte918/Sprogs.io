@@ -1,6 +1,7 @@
 var config = {
 	include: [
 		{name: 'Box', path: './gameClasses/Box'},
+		{name: 'Coin', path: './gameClasses/Coin'},
 		{name: 'Projectile', path: './gameClasses/Projectile'},
 
 		{name: 'Green_Islands_75x75', path: './assets/maps/Green_Islands_75x75'},

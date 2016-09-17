@@ -380,6 +380,13 @@ var Player = IgeEntityBox2d.extend({
 		}
 	},
 
+	addToScore: function (value) {
+		if (ige.isServer) {
+			this.playerProperties.score += value;
+			console.log(this.playerProperties.score);
+		}
+	},
+
 	respawn: function () {
 		this.playerProperties.isDead = true;
 
@@ -389,7 +396,7 @@ var Player = IgeEntityBox2d.extend({
 		var self = this;
 		new IgeTimeout(function () {
 			self.translateTo(spawnpoint.x, spawnpoint.y, spawnpoint.z);
-			self.rotateTo(0,0,0);
+			self.rotateTo(0, 0, Math.random() * 2 * Math.PI)
 			self.playerProperties.health = 100;
 			self.playerProperties.isDead = false;
 		}, 2500);
@@ -429,6 +436,7 @@ var Player = IgeEntityBox2d.extend({
 		}
 	},
 
+	// TODO Create an emitter for shooting
 	createEmitters: function () {
 		// Add a particle emitter for the thrust particles
 		// TODO: Add different quantities and velocities based on player velocity

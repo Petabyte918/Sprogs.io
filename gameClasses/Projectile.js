@@ -1,7 +1,7 @@
 var Projectile = IgeEntityBox2d.extend({
     classId: 'Projectile',
 
-    init: function(id, mouseAngleFromPlayer) {
+    init: function() {
         IgeEntityBox2d.prototype.init.call(this);
         this.category("Projectile");
         

@@ -20,7 +20,8 @@ var Client = IgeClass.extend({
 		// Load the textures we want to use
 		this.textures = {
 			ship: new IgeTexture('./assets/Pirate_Ship_Top_Down_64x64.png'),
-			orb: new IgeTexture('./assets/Orb.js')
+			orb: new IgeTexture('./assets/Orb.js'),
+			coinBronze: new IgeTexture('./assets/coin_29.png')
 		};
 
 		ige.on('texturesLoaded', function () {
@@ -122,10 +123,10 @@ var Client = IgeClass.extend({
 
 		ige.client.vp1.camera.translateTo(2400, 2400, 0);
 
-		self.panCameraToPoint(undefined, undefined, 15 * 1000);
+		self.panCameraToPoint(15 * 1000);
 
 		self.panController = new IgeInterval(function () {
-			self.panCameraToPoint(undefined, undefined, 10 * 1000);
+			self.panCameraToPoint(10 * 1000);
 		}, 7000);
 	},
 
@@ -140,7 +141,7 @@ var Client = IgeClass.extend({
 		ige.client.panController.cancel();
 	},
 
-	panCameraToPoint: function (x, y, easing) {
+	panCameraToPoint: function (easing, x, y) {
 		ige.client.vp1.camera._translate.tween().stopAll();
 
 		var lowerBound = 500;
