@@ -82,10 +82,12 @@ var Server = IgeClass.extend({
 							self._myMapDataFromId['background'] = layersById.background.map._mapData;
 							self._myMapDataFromId['shoreSpawns'] = layersById.shoreSpawns.map._mapData;
 
+							self.coins = [];
 							// TODO: create a handler to always spawn more coins until a given cap
-							for (i = 0; i < 100; i++) {
-								var spawnpoint = self.getShoreSpawnPoint();
-								new Coin()
+							// TODO: prevent coins from spawning on top of each other
+							for (i = 0; i < 15; i++) {
+								var spawnpoint = self.getCoinSpawnPoint();
+								var coin = new Coin()
 									.translateTo(spawnpoint.x, spawnpoint.y, spawnpoint.z)
 									.mount(self.mainScene);
 							}
@@ -154,7 +156,7 @@ var Server = IgeClass.extend({
 		// return new IgePoint3d(2400,2400,0)
 	},
 
-	getShoreSpawnPoint: function () {
+	getCoinSpawnPoint: function () {
 		var destTileX = - 1;
 		var destTileY = -1;
 

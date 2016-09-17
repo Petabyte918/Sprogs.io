@@ -12,6 +12,8 @@ var Coin = IgeEntity.extend({
                 value: 5,
                 radius: 50
             };
+
+            ige.server.coins.push(this);
             
             this.streamMode(1);
         }
@@ -46,8 +48,22 @@ var Coin = IgeEntity.extend({
     },
     
     grabCoin: function (player) {
-        player.addToScore(this.serverProperties.value);
-        this.destroy();
+        if (ige.isServer) {
+            player.addToScore(this.serverProperties.value);
+
+            this.spawnNewCoin();
+            this.destroy();
+        }
+    },
+
+    spawnNewCoin: function () {
+        if (ige.isServer) {
+            var spawnpoint = ige.server.getCoinSpawnPoint();
+
+            new Coin()
+                .translateTo(spawnpoint.x, spawnpoint.y, spawnpoint.z)
+                .mount(ige.server.mainScene)
+        }
     }
 });
 

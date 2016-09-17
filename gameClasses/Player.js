@@ -383,7 +383,6 @@ var Player = IgeEntityBox2d.extend({
 	addToScore: function (value) {
 		if (ige.isServer) {
 			this.playerProperties.score += value;
-			console.log(this.playerProperties.score);
 		}
 	},
 
