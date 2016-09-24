@@ -4,12 +4,25 @@ var Coin = IgeEntity.extend({
     init: function () {
         IgeEntity.prototype.init.call(this);
         this.category("Coin");
-        
-        if (ige.isServer) {
 
-            // TODO: Add a random value
+        var rarity = Math.ceil(Math.random() * 100);
+
+        var coinTexture;
+        var value;
+        if (rarity <= 100 && rarity > 90) {
+            if (ige.isClient) coinTexture = ige.client.textures.coinGold;
+            value = 10;
+        } else if (rarity <= 90 && rarity > 60) {
+            if (ige.isClient) coinTexture = ige.client.textures.coinSilver;
+            value = 7;
+        } else {
+            if (ige.isClient) coinTexture = ige.client.textures.coinBronze;
+            value = 5;
+        }
+
+        if (ige.isServer) {
             this.serverProperties = {
-                value: 5,
+                value: value,
                 radius: 60
             };
 
@@ -19,8 +32,7 @@ var Coin = IgeEntity.extend({
         }
 
         if (ige.isClient) {
-            // TODO: assign the coin a better texture based off its value
-            this.texture(ige.client.textures.coinBronze);
+            this.texture(coinTexture);
         }
     },
 

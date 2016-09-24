@@ -7,7 +7,7 @@
 	<meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="game-engine-origin" content="http://www.isogenicengine.com">
 	<meta http-equiv="X-UA-Compatible" content="IE=9" >
-	<title>Grab Thee Booty!!</title>
+	<title>Ahoy sprogs!!</title>
 
     <style type="text/css">
         .Absolute-Center {
@@ -24,18 +24,21 @@
             padding: 40px;
         }
 
-        .Offset-Right {
+        .Right {
             margin: auto;
             position: absolute;
-            top: 0; left: 40%; bottom: 0; right: 0;
+            right: 0;
+            width: 200px;
         }
 
-        .Offset-Right.is-Responsive {
-            width: 20%;
-            height: 50%;
-            min-width: 200px;
-            max-width: 200px;
-            padding: 20px;
+        .NoSelect {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            -o-user-select: none;
+            user-select: none;
         }
     </style>
 
@@ -56,19 +59,6 @@
         </div>
     </div>
 
-    <!--<div class="modal show">-->
-        <!--<div class="modal-dialog Offset-Right is-Responsive">-->
-            <!--<div class="modal-content">-->
-                <!--<div class="modal-header">-->
-                    <!--<h3 class="modal-title">Score:</h3>-->
-                <!--</div>-->
-                <!--<div class="modal-body">-->
-                    <!--<p>5</p>-->
-                <!--</div>-->
-            <!--</div>-->
-        <!--</div>-->
-    <!--</div>-->
-
     <div class="container" id="nameArea" style="display: none">
         <div class="row">
             <div class="Absolute-Center is-Responsive">
@@ -78,6 +68,17 @@
                         <input class="form-control" id="inputName" type="text" name='bootyName' maxlength="7" autofocus placeholder="Please enter your name..."/>
                     </div>
                     <button type="button" class="btn btn-primary btn-block" id="enterBtn" onclick="ige.client.connectAndStartGame()">Enter</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="Right NoSelect" id="scoreboard" style="display: none"><br/>
+        <div class="col-xs-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">Score:</div>
+                <div class="panel-body">
+                    <ul id="score" class="pre-scrollable"></ul>
                 </div>
             </div>
         </div>

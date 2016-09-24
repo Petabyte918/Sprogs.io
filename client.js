@@ -21,7 +21,9 @@ var Client = IgeClass.extend({
 		this.textures = {
 			ship: new IgeTexture('./assets/Pirate_Ship_Top_Down_64x64.png'),
 			orb: new IgeTexture('./assets/Orb.js'),
-			coinBronze: new IgeTexture('./assets/coin_29.png')
+			coinBronze: new IgeTexture('./assets/coin_bronze.png'),
+			coinSilver: new IgeTexture('./assets/coin_silver.png'),
+			coinGold: new IgeTexture('./assets/coin_gold.png')
 		};
 
 		ige.on('texturesLoaded', function () {
@@ -140,6 +142,8 @@ var Client = IgeClass.extend({
 		nameInputArea.value ? name = nameInputArea.value : name = "Player";
 
 		document.getElementById('nameArea').style.display = 'none';
+		document.getElementById('scoreboard').style.display = 'block';
+
 		ige.client.panController.cancel();
 	},
 
@@ -161,6 +165,14 @@ function getRandomInt(min, max) {
 	min = Math.ceil(min);
 	max = Math.floor(max);
 	return Math.floor(Math.random() * (max - min)) + min;
+}
+
+function appendToScoreList (name) {
+	var ul = document.getElementById("score");
+	var li = document.createElement("li");
+	li.appendChild(document.createTextNode("hi"));
+
+	ul.appendChild(li);
 }
 
 if (typeof(module) !== 'undefined' && typeof(module.exports) !== 'undefined') { module.exports = Client; }

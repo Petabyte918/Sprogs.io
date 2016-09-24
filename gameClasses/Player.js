@@ -139,7 +139,6 @@ var Player = IgeEntityBox2d.extend({
 						this.sounds.hurt.play();
 					}
 				}
-
 			}
 		}
 
@@ -598,7 +597,7 @@ var Player = IgeEntityBox2d.extend({
 		var diffRot = (Math.abs(MouseRot - myRot) * 180 / Math.PI ) % 360;
 
 		// Set a range of degrees and prohibit shooting within those bounds
-		if (bounds == undefined) bounds = 40;
+		if (bounds == undefined) bounds = 42;
 
 		return !((diffRot > 90 - bounds && diffRot < 90 + bounds) ||
 		(diffRot > 270 - bounds && diffRot < 270 + bounds));
