@@ -152,6 +152,7 @@ var Player = IgeEntityBox2d.extend({
 			} else {
 				if (this.playerProperties.score != data) {
 					this.playerProperties.score = data;
+					ige.client.addToScoreList(this._id, this.playerProperties.score, this.playerProperties.username);
 				}
 			}
 		}
@@ -394,7 +395,7 @@ var Player = IgeEntityBox2d.extend({
 		var self = this;
 		new IgeTimeout(function () {
 			self.translateTo(spawnpoint.x, spawnpoint.y, spawnpoint.z);
-			self.rotateTo(0, 0, Math.random() * 2 * Math.PI)
+			self.rotateTo(0, 0, Math.random() * 2 * Math.PI);
 			self.playerProperties.health = 100;
 			self.playerProperties.isDead = false;
 		}, 2500);

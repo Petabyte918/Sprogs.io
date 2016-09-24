@@ -85,7 +85,7 @@ var Server = IgeClass.extend({
 							self.coins = [];
 							// TODO: create a handler to always spawn more coins until a given cap
 							// TODO: prevent coins from spawning on top of each other
-							for (i = 0; i < 15; i++) {
+							for (i = 0; i < 75; i++) {
 								var spawnpoint = self.getCoinSpawnPoint();
 								var coin = new Coin()
 									.translateTo(spawnpoint.x, spawnpoint.y, spawnpoint.z)

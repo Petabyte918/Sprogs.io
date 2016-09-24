@@ -158,6 +158,22 @@ var Client = IgeClass.extend({
 		if (y == undefined) y = getRandomInt(lowerBound, upperBound);
 
 		ige.client.vp1.camera.panTo(new IgePoint3d(x, y, 0), easing);
+	},
+
+	addToScoreList: function (id, score, username) {
+		var text = username + ": " + score;
+
+		if(document.getElementById(id)) {
+			document.getElementById(id).innerHTML = text;
+		} else {
+			var ul = document.getElementById("scores");
+			var li = document.createElement("li");
+
+			li.setAttribute("id", id);
+			li.appendChild(document.createTextNode(text));
+
+			ul.appendChild(li);
+		}
 	}
 });
 
@@ -165,14 +181,6 @@ function getRandomInt(min, max) {
 	min = Math.ceil(min);
 	max = Math.floor(max);
 	return Math.floor(Math.random() * (max - min)) + min;
-}
-
-function appendToScoreList (name) {
-	var ul = document.getElementById("score");
-	var li = document.createElement("li");
-	li.appendChild(document.createTextNode("hi"));
-
-	ul.appendChild(li);
 }
 
 if (typeof(module) !== 'undefined' && typeof(module.exports) !== 'undefined') { module.exports = Client; }
