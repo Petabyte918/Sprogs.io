@@ -28,7 +28,7 @@ var Coin = IgeEntity.extend({
         if (ige.isServer) {
             var players = ige.server.players;
             for (var playerId in players) {
-                if (player.hasOwnProperty(playerId)) {
+                if (players.hasOwnProperty(playerId)) {
                     if (this.isWithinRange(players[playerId].worldPosition())) {
                         this.grabCoin(players[playerId]);
                     }
