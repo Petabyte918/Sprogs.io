@@ -50,9 +50,9 @@ var Player = IgeEntityBox2d.extend({
 				this.serverProperties = {
 					thrustVelocity: 0,          // current velocity
 					maxThrustVelocity: 7,     	// max velocity
-					rotationDivisor: 3.3,		// divisor to calculate rotation velocity
+					rotationDivisor: 5.5,		// divisor to calculate rotation velocity
 					acceleration: 0.025,        // percent of maxThrust to increase by every tick
-					friction: 0.04              // percent of thrust to decrease by every tick
+					friction: 0.03              // percent of thrust to decrease by every tick
 				};
 			}
 
@@ -206,7 +206,7 @@ var Player = IgeEntityBox2d.extend({
 		var fric = this.serverProperties.friction;
 
 		// Calculate rotateVelocity based on current thrustVelocity
-		var rotateVelocity = this.serverProperties.thrustVelocity / this.serverProperties.rotationDivisor;
+		var rotateVelocity = (this.serverProperties.thrustVelocity / this.serverProperties.rotationDivisor) + 0.8;
 
 		// Whenever we listen for input, awake the body
 		if (this.controls.left) {

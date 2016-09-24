@@ -10,7 +10,7 @@ var Coin = IgeEntity.extend({
             // TODO: Add a random value
             this.serverProperties = {
                 value: 5,
-                radius: 50
+                radius: 60
             };
 
             ige.server.coins.push(this);
@@ -28,8 +28,10 @@ var Coin = IgeEntity.extend({
         if (ige.isServer) {
             var players = ige.server.players;
             for (var playerId in players) {
-                if (this.isWithinRange(players[playerId].worldPosition())) {
-                    this.grabCoin(players[playerId]);
+                if (player.hasOwnProperty(playerId)) {
+                    if (this.isWithinRange(players[playerId].worldPosition())) {
+                        this.grabCoin(players[playerId]);
+                    }
                 }
             }
         }

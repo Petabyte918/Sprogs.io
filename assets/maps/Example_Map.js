@@ -41,8 +41,8 @@ if (typeof(module) !== 'undefined' && typeof(module.exports) !== 'undefined') { 
 
 /*
 
-var Test_10x10 = {
+var Green_Islands_75x75 = {
 "image":"./assets/mapPack_tilesheet.png",
-if (typeof(module) !== 'undefined' && typeof(module.exports) !== 'undefined') { module.exports = Test_10x10; }
+if (typeof(module) !== 'undefined' && typeof(module.exports) !== 'undefined') { module.exports = Green_Islands_75x75; }
 
 **/
