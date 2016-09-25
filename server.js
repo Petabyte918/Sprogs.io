@@ -83,7 +83,7 @@ var Server = IgeClass.extend({
 							self._myMapDataFromId['shoreSpawns'] = layersById.shoreSpawns.map._mapData;
 							self._myMapDataFromId['harbors'] = layersById.harbors.map._mapData;
 
-							self.spawnCoins(25);
+							self.populateCoins(100);
 							self.spawnHarbors(self._myMapDataFromId['harbors']);
 
 							// Create collision boxes from the layers in the map
@@ -162,8 +162,15 @@ var Server = IgeClass.extend({
 			destTileY = Math.random() * 75 | 0;
 		}
 
+		var randOffset = 16;
+		var randX = Math.random() * randOffset;
+		var randY = Math.random() * randOffset;
+		var randZ = Math.random();
+		if (Math.random() > 0.5) randX *= -1;
+		if (Math.random() > 0.5) randY *= -1;
+
 		var spriteSize = 64;
-		return new IgePoint3d((destTileX * spriteSize + spriteSize/2), (destTileY * spriteSize + spriteSize/2), 0);
+		return new IgePoint3d((destTileX * spriteSize + spriteSize/2 + randX), (destTileY * spriteSize + spriteSize/2 + randY), randZ);
 	},
 
 	tileChecker: function (tileData, tileX, tileY) {
@@ -182,15 +189,19 @@ var Server = IgeClass.extend({
 	},
 
 	// TODO: create a handler to always spawn more coins until a given cap
-	spawnCoins: function (count) {
+	populateCoins: function (count) {
 		this.coins = [];
 
 		for (var i = 0; i < count; i++) {
-			var spawnpoint = this.getCoinSpawnPoint();
-			coin = new Coin()
-				.translateTo(spawnpoint.x, spawnpoint.y, spawnpoint.z)
-				.mount(this.mainScene);
+			this.spawnNewCoin();
 		}
+	},
+
+	spawnNewCoin: function () {
+		var spawnpoint = this.getCoinSpawnPoint();
+		coin = new Coin()
+			.translateTo(spawnpoint.x, spawnpoint.y, spawnpoint.z)
+			.mount(this.mainScene);
 	},
 
 	spawnHarbors: function (mapData) {

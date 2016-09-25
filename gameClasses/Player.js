@@ -382,13 +382,13 @@ var Player = IgeEntityBox2d.extend({
 	},
 
 	addToCoinScore: function (value) {
-		if (ige.isServer) {
+		if (ige.isServer && !this.playerProperties.isDead) {
 			this.playerProperties.coinScore += value;
 		}
 	},
 
 	cashInCoins: function () {
-		if (ige.isServer) {
+		if (ige.isServer && !this.playerProperties.isDead) {
 			this.playerProperties.score += this.playerProperties.coinScore;
 			this.playerProperties.coinScore = 0;
 		}
@@ -615,6 +615,18 @@ var Player = IgeEntityBox2d.extend({
 	},
 
 	dropCoins: function () {
+		for (var i = 0; i < this.playerProperties.coinScore / 5; i++) {
+
+			var randX = Math.random() * 32;
+			var randY = Math.random() * 32;
+			if (Math.random() > 0.5) randX *= -1;
+			if (Math.random() > 0.5) randY *= -1;
+
+			new Coin(false)
+				.translateTo(this.worldPosition().x + randX, this.worldPosition().y + randY, 0)
+				.mount(ige.server.mainScene);
+		}
+		
 		this.playerProperties.coinScore = 0;
 	}
 });

@@ -1,9 +1,11 @@
 var Coin = IgeEntity.extend({
     classId: 'Coin',
 
-    init: function () {
+    init: function (spawnMore) {
         IgeEntity.prototype.init.call(this);
         this.category("Coin");
+        
+        if (spawnMore == undefined) spawnMore = true;
 
         // TODO: get value from server to display the correct texture
         var rarity = Math.ceil(Math.random() * 100);
@@ -22,6 +24,7 @@ var Coin = IgeEntity.extend({
 
         if (ige.isServer) {
             this.serverProperties = {
+                spawnMore: spawnMore,
                 value: value,
                 radius: 60
             };
@@ -62,7 +65,7 @@ var Coin = IgeEntity.extend({
     },
     
     grabCoin: function (player) {
-        if (ige.isServer) {
+        if (ige.isServer && !player.playerProperties.isDead) {
             player.addToCoinScore(this.serverProperties.value);
 
             this.spawnNewCoin();
@@ -71,12 +74,9 @@ var Coin = IgeEntity.extend({
     },
 
     spawnNewCoin: function () {
-        if (ige.isServer) {
-            var spawnpoint = ige.server.getCoinSpawnPoint();
-
-            new Coin()
-                .translateTo(spawnpoint.x, spawnpoint.y, spawnpoint.z)
-                .mount(ige.server.mainScene)
+        if (ige.isServer && this.serverProperties.spawnMore) {
+            console.log("spawend");
+            ige.server.spawnNewCoin();
         }
     }
 });
