@@ -7,6 +7,7 @@ var igeClientConfig = {
 		'./gameClasses/ClientNetworkEvents.js',
 		'./gameClasses/Box.js',
 		'./gameClasses/Coin.js',
+		'./gameClasses/Harbor.js',
 		'./gameClasses/Projectile.js',
 		'./gameClasses/Player.js',
 		'./gameClasses/ThrustParticle.js',

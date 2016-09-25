@@ -81,17 +81,11 @@ var Server = IgeClass.extend({
 							self._myMapDataFromId['islands'] = layersById.islands.map._mapData;
 							self._myMapDataFromId['background'] = layersById.background.map._mapData;
 							self._myMapDataFromId['shoreSpawns'] = layersById.shoreSpawns.map._mapData;
+							self._myMapDataFromId['harbors'] = layersById.harbors.map._mapData;
 
-							self.coins = [];
-							// TODO: create a handler to always spawn more coins until a given cap
-							// TODO: prevent coins from spawning on top of each other
-							for (i = 0; i < 75; i++) {
-								var spawnpoint = self.getCoinSpawnPoint();
-								var coin = new Coin()
-									.translateTo(spawnpoint.x, spawnpoint.y, spawnpoint.z)
-									.mount(self.mainScene);
-							}
-							
+							self.spawnCoins(25);
+							self.spawnHarbors(self._myMapDataFromId['harbors']);
+
 							// Create collision boxes from the layers in the map
 							ige.box2d.staticsFromMap(layersById.collisions);
 							ige.box2d.staticsFromMap(layersById.islands);
@@ -152,10 +146,11 @@ var Server = IgeClass.extend({
 		}
 		
 		// TODO: swap this back out when done testing
-		return new IgePoint3d(destTileX * 64 + 0.5 * 64, destTileY * 64 + 0.5 * 64, 0);
-		// return new IgePoint3d(2400,2400,0)
+		// return new IgePoint3d(destTileX * 64 + 0.5 * 64, destTileY * 64 + 0.5 * 64, 0);
+		return new IgePoint3d(2400,2400,0)
 	},
 
+	// TODO: prevent coins spawning on top of each other
 	getCoinSpawnPoint: function () {
 		var destTileX = - 1;
 		var destTileY = -1;
@@ -167,7 +162,8 @@ var Server = IgeClass.extend({
 			destTileY = Math.random() * 75 | 0;
 		}
 
-		return new IgePoint3d(destTileX * 64 + 0.5 * 64, destTileY * 64 + 0.5 * 64, 0);
+		var spriteSize = 64;
+		return new IgePoint3d((destTileX * spriteSize + spriteSize/2), (destTileY * spriteSize + spriteSize/2), 0);
 	},
 
 	tileChecker: function (tileData, tileX, tileY) {
@@ -183,6 +179,38 @@ var Server = IgeClass.extend({
 	includeMapTilesById: function (id, destTileX, destTileY) {
 		return !this._myMapDataFromId[id][destTileY]
 			|| this.tileChecker(this._myMapDataFromId[id][destTileY][destTileX]);
+	},
+
+	// TODO: create a handler to always spawn more coins until a given cap
+	spawnCoins: function (count) {
+		this.coins = [];
+
+		for (var i = 0; i < count; i++) {
+			var spawnpoint = this.getCoinSpawnPoint();
+			coin = new Coin()
+				.translateTo(spawnpoint.x, spawnpoint.y, spawnpoint.z)
+				.mount(this.mainScene);
+		}
+	},
+
+	spawnHarbors: function (mapData) {
+		var spriteSize = 64;
+
+		for (var y in mapData) {
+			if (mapData.hasOwnProperty(y)) {
+				if (y) {
+					for (var x in mapData[y]) {
+						if (mapData[y].hasOwnProperty(x)) {
+							if (x) {
+								harbor = new Harbor()
+									.translateTo((x * spriteSize + spriteSize/2), (y * spriteSize + spriteSize/2), 0)
+									.mount(this.mainScene);
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 });
 

@@ -13,6 +13,7 @@ var Player = IgeEntityBox2d.extend({
 		this.playerProperties = {
 			username: "Player",
 			health: 100,
+			coinScore: 0,
 			score: 0,
 			isDead: false,
 			timeToHit: 0,
@@ -380,14 +381,23 @@ var Player = IgeEntityBox2d.extend({
 		}
 	},
 
-	addToScore: function (value) {
+	addToCoinScore: function (value) {
 		if (ige.isServer) {
-			this.playerProperties.score += value;
+			this.playerProperties.coinScore += value;
+		}
+	},
+
+	cashInCoins: function () {
+		if (ige.isServer) {
+			this.playerProperties.score += this.playerProperties.coinScore;
+			this.playerProperties.coinScore = 0;
 		}
 	},
 
 	respawn: function () {
 		this.playerProperties.isDead = true;
+
+		this.dropCoins();
 
 		// Get a new random spawnpoint
 		var spawnpoint = ige.server.getPlayerSpawnPoint();
@@ -602,6 +612,10 @@ var Player = IgeEntityBox2d.extend({
 
 		return !((diffRot > 90 - bounds && diffRot < 90 + bounds) ||
 		(diffRot > 270 - bounds && diffRot < 270 + bounds));
+	},
+
+	dropCoins: function () {
+		this.playerProperties.coinScore = 0;
 	}
 });
 

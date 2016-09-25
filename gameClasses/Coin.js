@@ -8,17 +8,17 @@ var Coin = IgeEntity.extend({
         // TODO: get value from server to display the correct texture
         var rarity = Math.ceil(Math.random() * 100);
         if (ige.isClient) var coinTexture = ige.client.textures.coinBronze;
-        var value;
-        if (rarity <= 100 && rarity > 90) {
-            // if (ige.isClient) coinTexture = ige.client.textures.coinGold;
-            value = 10;
-        } else if (rarity <= 90 && rarity > 60) {
-            // if (ige.isClient) coinTexture = ige.client.textures.coinSilver;
-            value = 7;
-        } else {
-            // if (ige.isClient) coinTexture = ige.client.textures.coinBronze;
-            value = 5;
-        }
+        var value = 5;
+        // if (rarity <= 100 && rarity > 90) {
+        //     // if (ige.isClient) coinTexture = ige.client.textures.coinGold;
+        //     value = 10;
+        // } else if (rarity <= 90 && rarity > 60) {
+        //     // if (ige.isClient) coinTexture = ige.client.textures.coinSilver;
+        //     value = 7;
+        // } else {
+        //     // if (ige.isClient) coinTexture = ige.client.textures.coinBronze;
+        //     value = 5;
+        // }
 
         if (ige.isServer) {
             this.serverProperties = {
@@ -63,7 +63,7 @@ var Coin = IgeEntity.extend({
     
     grabCoin: function (player) {
         if (ige.isServer) {
-            player.addToScore(this.serverProperties.value);
+            player.addToCoinScore(this.serverProperties.value);
 
             this.spawnNewCoin();
             this.destroy();
