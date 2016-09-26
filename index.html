@@ -11,9 +11,8 @@
 
     <style type="text/css">
         .Absolute-Center {
-            margin: auto;
             position: absolute;
-            top: 50%; left: 0; bottom: 0; right: 0;
+            margin: auto;
         }
 
         .Absolute-Center.is-Responsive {
@@ -22,13 +21,37 @@
             min-width: 200px;
             max-width: 400px;
             padding: 40px;
+            top: 50%; left: 0; bottom: 0; right: 0;
+        }
+
+        .Tutorial {
+            position: absolute;
+            margin: auto;
+            min-width: 200px;
+            max-width: 475px;
+            padding: 40px;
+            top: 30%; left: 0; bottom: 0; right: 0;
         }
 
         .Right {
             margin: auto;
             position: absolute;
             right: 0;
+        }
+
+        .Left {
+            margin: auto;
+            position: absolute;
+            left: 0;
+        }
+
+        .ScoreBoard {
             width: 215px;
+        }
+
+        .Bottom {
+            bottom: 0;
+            padding: 20px;
         }
 
         .NoSelect {
@@ -61,6 +84,20 @@
 
     <div class="container" id="nameArea" style="display: none">
         <div class="row">
+            <div id="images">
+                <div class="Tutorial NoSelect">
+                    <img src="./assets/Tutorial.png" width="390" height="150"/>
+                </div>
+
+                <div class="Right Bottom NoSelect">
+                    <a href="//www.isogenicengine.com/" target="_blank"> Powered by the Isogenic Engine <img src="//www.isogenicengine.com/assets/logo2.png" height="32" width="32"/></a>
+                </div>
+
+                <div class="Left Bottom NoSelect">
+                    <a href="//www.reddit.com/r/sprogsio/" target="_blank"> <img src="//www.redditstatic.com/spreddit1.gif"/> Join the discussion on Reddit!</a>
+                </div>
+            </div>
+
             <div class="Absolute-Center is-Responsive">
                 <div class="col-sm-12 col-md-10 col-md-offset-1">
                     <div class="form-group input-group">
@@ -73,7 +110,7 @@
         </div>
     </div>
 
-    <div class="Right NoSelect" id="scoreboard" style="display: none"><br/>
+    <div class="Right ScoreBoard NoSelect" id="scoreboard" style="display: none"><br/>
         <div class="col-xs-12">
             <div class="panel panel-default">
                 <div class="panel-heading">Score:</div>

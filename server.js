@@ -83,7 +83,7 @@ var Server = IgeClass.extend({
 							self._myMapDataFromId['shoreSpawns'] = layersById.shoreSpawns.map._mapData;
 							self._myMapDataFromId['harbors'] = layersById.harbors.map._mapData;
 
-							self.populateCoins(100);
+							self.populateCoins(25);
 							self.spawnHarbors(self._myMapDataFromId['harbors']);
 
 							// Create collision boxes from the layers in the map

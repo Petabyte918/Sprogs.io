@@ -14,7 +14,7 @@ var Harbor = IgeEntity.extend({
         }
 
         if (ige.isClient) {
-            this.texture(ige.client.textures.orb);
+            // this.texture(ige.client.textures.orb);
         }
     },
 
