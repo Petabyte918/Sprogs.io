@@ -1,7 +1,6 @@
 # What is Sprogs.io?
-Sprogs is a mutliplayer html game made with the Isogenic Engine.  
+Sprogs is a mutliplayer html game made with the [Isogenic Engine](http://www.isogenicengine.com/).  
 It features a medium sized map filled with islands and treasure to collect.
-
 
 # How do I play?
 - Collect treasure
